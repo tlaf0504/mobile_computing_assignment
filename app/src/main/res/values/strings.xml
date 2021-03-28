@@ -1,3 +1,8 @@
 <resources>
     <string name="app_name">MobileComputingAssignment</string>
+    <string name="gyroscope_label_x">Gyroscope x: %1$.2f</string>
+    <string name="gyroscope_label_y">Gyroscope y: %1$.2f</string>
+    <string name="gyroscope_label_z">Gyroscope z: %1$.2f</string>
+    <string name="proximity_label">Proximity: %1$.2f</string>
+    <string name="error_no_sensor">No Sensor</string>
 </resources>
