@@ -8,6 +8,10 @@ import android.hardware.SensorManager
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import android.widget.TextView
+import android.bluetooth.*
+import android.content.Intent
+import java.util.*
+
 class MainActivity : AppCompatActivity(), SensorEventListener {
 
     private lateinit var mSensorManager: SensorManager;
@@ -20,9 +24,19 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     private lateinit var twGyroZ: TextView;
     private lateinit var twProximity: TextView;
 
+    private lateinit var bluetoothManager: BluetoothManager
+    private lateinit var bluetoothAdapter: BluetoothAdapter;
+    private lateinit var connectedBluetoothDevice: BluetoothDevice;
+    private lateinit var bluetoothSocket: BluetoothSocket;
+
+    private val REQUEST_ENABLE_BT: Int = 1;
+
+    private val bluetoothUUID = UUID.fromString("53eef5bf-6702-4ab6-bcf3-ae02a401d70e");
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
 
         mSensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager;
         twGyroX = findViewById(R.id.label_gyro_x);
@@ -53,6 +67,24 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         if (isGyroNull || isProximityNull) {
             return;
         }
+
+
+        bluetoothManager = getSystemService(BLUETOOTH_SERVICE) as BluetoothManager;
+        bluetoothAdapter = bluetoothManager.adapter
+
+
+        if (bluetoothAdapter.isEnabled == false) {
+            val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
+            startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT)
+        }
+
+        val connectedBluetoothDevices: MutableSet<BluetoothDevice> =
+                bluetoothAdapter.bondedDevices;
+
+        connectedBluetoothDevice = connectedBluetoothDevices.elementAt(0);
+
+        bluetoothSocket = connectedBluetoothDevice.createRfcommSocketToServiceRecord(bluetoothUUID);
+        bluetoothSocket.connect();
     }
 
     override fun onStart() {
