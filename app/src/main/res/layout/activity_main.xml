@@ -4,13 +4,13 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MainActivity"
-    android:layout_margin="16pt">
+    android:layout_margin="16pt"
+    tools:context=".MainActivity">
 
     <TextView
+        android:id="@+id/label_gyro_x"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:id="@+id/label_gyro_x"
         android:text="@string/gyroscope_label_x"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintTop_toTopOf="parent">
@@ -18,9 +18,9 @@
     </TextView>
 
     <TextView
+        android:id="@+id/label_gyro_y"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:id="@+id/label_gyro_y"
         android:text="@string/gyroscope_label_y"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/label_gyro_x">
@@ -28,9 +28,9 @@
     </TextView>
 
     <TextView
+        android:id="@+id/label_gyro_z"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:id="@+id/label_gyro_z"
         android:text="@string/gyroscope_label_z"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/label_gyro_y">
@@ -38,9 +38,9 @@
     </TextView>
 
     <TextView
+        android:id="@+id/label_accel_x"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:id="@+id/label_accel_x"
         android:text="@string/accelerometer_label_x"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/label_gyro_z">
@@ -48,9 +48,9 @@
     </TextView>
 
     <TextView
+        android:id="@+id/label_accel_y"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:id="@+id/label_accel_y"
         android:text="@string/accelerometer_label_y"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/label_accel_x">
@@ -58,15 +58,23 @@
     </TextView>
 
     <TextView
+        android:id="@+id/label_accel_z"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:id="@+id/label_accel_z"
         android:text="@string/accelerometer_label_z"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/label_accel_y">
 
     </TextView>
 
+    <Switch
+        android:id="@+id/recording_switch"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="34dp"
+        android:text="Record Sensor-Data"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/label_accel_z" />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>
