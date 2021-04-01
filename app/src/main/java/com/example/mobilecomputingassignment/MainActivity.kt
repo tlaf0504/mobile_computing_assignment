@@ -37,10 +37,14 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     private var lApplicationStartTime: Long = Calendar.getInstance().timeInMillis;
 
     // Sensor data. First column: timestamps, second column: sensor-values
+    // Currently disables as Bluetooth-transmission of sensor-data is currently not required.
+    /*
     private val arrSensorData = arrayOf(
             floatArrayOf(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
             floatArrayOf(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)
     );
+    */
+     */
 
 
     // ========== Bluetooth stuff
@@ -96,6 +100,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
 
         /* ========== Establish bluetooth connection ========== */
+        // Currently, sensor-data transmission via Bluetooth is disabled.
         /*
         bluetoothManager = getSystemService(BLUETOOTH_SERVICE) as BluetoothManager;
         bluetoothAdapter = bluetoothManager.adapter
