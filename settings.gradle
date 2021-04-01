@@ -1,2 +1,2 @@
 include ':app'
-rootProject.name = "MobileComputingAssignment"
+rootProject.name = "Mobile Computing Assignment"

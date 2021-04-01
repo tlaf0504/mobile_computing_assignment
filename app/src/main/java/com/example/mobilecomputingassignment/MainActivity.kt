@@ -17,7 +17,6 @@ import androidx.appcompat.app.AppCompatActivity
 import java.io.*
 import java.util.*
 
-
 // Libraries for File IO
 
 class MainActivity : AppCompatActivity(), SensorEventListener {
@@ -27,12 +26,14 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     private lateinit var mSensorManager: SensorManager;
 
     private lateinit var mGyroscope: Sensor;
-    private lateinit var mProximity: Sensor;
+    private lateinit var mAccelerometer: Sensor;
 
     private lateinit var twGyroX: TextView;
     private lateinit var twGyroY: TextView;
     private lateinit var twGyroZ: TextView;
-    private lateinit var twProximity: TextView;
+    private lateinit var twAccelX: TextView;
+    private lateinit var twAccelY: TextView;
+    private lateinit var twAccelZ: TextView;
 
     private var lApplicationStartTime: Long = Calendar.getInstance().timeInMillis;
 
@@ -44,7 +45,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             floatArrayOf(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)
     );
     */
-     */
 
 
     // ========== Bluetooth stuff
@@ -61,7 +61,8 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
     // ========== FileIO Stuff
     private lateinit var fGyroSensorDataFile: FileWriter;
-    private lateinit var fProximitySensorDataFile: FileWriter;
+    private lateinit var fAccelerometerSensorDataFile: FileWriter;
+    private var bWriteSensorData: Boolean = false;
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -72,15 +73,18 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         twGyroX = findViewById(R.id.label_gyro_x);
         twGyroY = findViewById(R.id.label_gyro_y);
         twGyroZ = findViewById(R.id.label_gyro_z);
-        twProximity = findViewById(R.id.label_proximity);
+        twAccelX = findViewById(R.id.label_accel_x);
+        twAccelY = findViewById(R.id.label_accel_y);
+        twAccelZ = findViewById(R.id.label_accel_z);
 
         mGyroscope = mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
         val isGyroNull = mGyroscope == null;
 
-        mProximity = mSensorManager.getDefaultSensor(Sensor.TYPE_PROXIMITY);
-        val isProximityNull = mProximity == null;
+        mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        val isAccelNull = mAccelerometer == null;
 
         val strNoSensorError: String = resources.getString(R.string.error_no_sensor);
+
 
         // Set error messages if corresponding sensor is not available.
         if (isGyroNull) {
@@ -89,12 +93,15 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             twGyroZ.text = strNoSensorError;
         }
 
-        if (isProximityNull) {
-            twProximity.text = strNoSensorError;
+        if (isAccelNull) {
+            twAccelX.text = strNoSensorError;
+            twAccelY.text = strNoSensorError;
+            twAccelZ.text = strNoSensorError;
         }
 
+
         // Return if one of the sensor is not available.
-        if (isGyroNull || isProximityNull) {
+        if (isGyroNull) {
             return;
         }
 
@@ -126,11 +133,12 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
         // ========== Create Sensor-Data File
         createSensorDataFiles()
-        
+
     }
 
     private fun createSensorDataFiles() {
-        val gyroSensorDataFilePath = File(filesDir, "gyro_sensor_data.txt");
+        val strDate: String = Calendar.getInstance().time.toString()
+        val gyroSensorDataFilePath = File(filesDir, "gyro_sensor_data_%s.txt".format(strDate));
         try {
             fGyroSensorDataFile = FileWriter(gyroSensorDataFilePath);
         } catch (e: FileNotFoundException) {
@@ -139,9 +147,9 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             e.printStackTrace();
         }
 
-        val proximitySensorDataFilePath = File(filesDir, "proxy_sensor_data.txt");
+        val accelerometerSensorDataFilePath = File(filesDir, "accel_sensor_data_%s.txt".format(strDate));
         try {
-            fProximitySensorDataFile = FileWriter(proximitySensorDataFilePath);
+            fAccelerometerSensorDataFile = FileWriter(accelerometerSensorDataFilePath);
         } catch (e: FileNotFoundException) {
             e.printStackTrace();
         } catch (e: IOException) {
@@ -149,22 +157,23 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         }
 
         fGyroSensorDataFile.write("time;x;y;z\n");
-        fProximitySensorDataFile.write("time;value\n");
+        fAccelerometerSensorDataFile.write("time;x;y;z\n");
     }
 
     override fun onStart() {
         super.onStart()
         mSensorManager.registerListener(this, mGyroscope, SensorManager.SENSOR_DELAY_NORMAL);
-        mSensorManager.registerListener(this, mProximity, SensorManager.SENSOR_DELAY_NORMAL);
+        mSensorManager.registerListener(this, mAccelerometer, SensorManager.SENSOR_DELAY_NORMAL);
+
     }
 
     override fun onStop() {
         super.onStop()
         mSensorManager.unregisterListener(this, mGyroscope);
-        mSensorManager.unregisterListener(this, mProximity);
+        mSensorManager.unregisterListener(this, mAccelerometer);
 
         fGyroSensorDataFile.flush()
-        fProximitySensorDataFile.flush()
+        fAccelerometerSensorDataFile.flush()
     }
 
     override fun onSensorChanged(event: SensorEvent?) {
@@ -184,24 +193,25 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             twGyroY.text = resources.getString(R.string.gyroscope_label_y, fGyroY);
             twGyroZ.text = resources.getString(R.string.gyroscope_label_z, fGyroZ);
 
-            val fTimestamp: Float = (Calendar.getInstance().timeInMillis - lApplicationStartTime).toFloat();
-            arrSensorData[0][0] = fTimestamp;
-            arrSensorData[0][1] = fTimestamp;
-            arrSensorData[0][2] = fTimestamp;
-
-            arrSensorData[1][0] = fGyroX;
-            arrSensorData[1][1] = fGyroY;
-            arrSensorData[1][2] = fGyroZ;
-
-            fGyroSensorDataFile.write("%f;%f;%f;%f\n".format(fTimestamp, fGyroX, fGyroY, fGyroZ));
+            if (bWriteSensorData) {
+                val fTimestamp: Float = (Calendar.getInstance().timeInMillis - lApplicationStartTime).toFloat();
+                fGyroSensorDataFile.write("%f;%f;%f;%f\n".format(fTimestamp, fGyroX, fGyroY, fGyroZ));
+            }
         }
 
-        if (iSensorType == Sensor.TYPE_PROXIMITY) {
-            twProximity.text = resources.getString(R.string.proximity_label, event.values[0]);
+        if (iSensorType == Sensor.TYPE_ACCELEROMETER) {
+            val fAccelX : Float = event.values[0];
+            val fAccelY : Float = event.values[1];
+            val fAccelZ : Float = event.values[2];
 
-            val fTimestamp: Float = (Calendar.getInstance().timeInMillis - lApplicationStartTime).toFloat();
-            val fSensorValue: Float = event.values[0];
-            fProximitySensorDataFile.write("%f;%f\n".format(fTimestamp, fSensorValue));
+            twAccelX.text = resources.getString(R.string.accelerometer_label_x, fAccelX);
+            twAccelY.text = resources.getString(R.string.accelerometer_label_y, fAccelY);
+            twAccelZ.text = resources.getString(R.string.accelerometer_label_z, fAccelZ);
+
+            if (bWriteSensorData) {
+                val fTimestamp: Float = (Calendar.getInstance().timeInMillis - lApplicationStartTime).toFloat();
+                fAccelerometerSensorDataFile.write("%f;%f;%f;%f\n".format(fTimestamp, fAccelX, fAccelY, fAccelZ));
+            }
         }
     }
 
