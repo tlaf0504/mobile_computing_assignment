@@ -13,13 +13,17 @@ import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.os.Bundle
 import android.widget.TextView
+import android.widget.Switch
+import android.widget.CompoundButton
 import androidx.appcompat.app.AppCompatActivity
 import java.io.*
 import java.util.*
+import java.util.concurrent.locks.Lock
+import java.util.concurrent.locks.ReentrantLock
 
 // Libraries for File IO
 
-class MainActivity : AppCompatActivity(), SensorEventListener {
+class MainActivity : AppCompatActivity(), SensorEventListener, CompoundButton.OnCheckedChangeListener {
 
 
     // ========== Sensor-data stuff
@@ -62,7 +66,12 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     // ========== FileIO Stuff
     private lateinit var fGyroSensorDataFile: FileWriter;
     private lateinit var fAccelerometerSensorDataFile: FileWriter;
+
+    private lateinit var swSensorDataRecordingSwitch: Switch;
+
     private var bWriteSensorData: Boolean = false;
+    private val writeSensorDataLock: Lock = ReentrantLock();
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -105,6 +114,11 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             return;
         }
 
+        // Register event-listener for sensor-data recording switch.
+        swSensorDataRecordingSwitch = findViewById(R.id.recording_switch);
+        swSensorDataRecordingSwitch.setOnCheckedChangeListener(this);
+
+
 
         /* ========== Establish bluetooth connection ========== */
         // Currently, sensor-data transmission via Bluetooth is disabled.
@@ -130,10 +144,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         inputStream = bluetoothSocket.inputStream;
         outputStream = bluetoothSocket.outputStream;
          */
-
-        // ========== Create Sensor-Data File
-        createSensorDataFiles()
-
     }
 
     private fun createSensorDataFiles() {
@@ -160,20 +170,24 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         fAccelerometerSensorDataFile.write("time;x;y;z\n");
     }
 
+    private fun flushAndCloseSensorDataFiles() {
+        fAccelerometerSensorDataFile.flush();
+        fAccelerometerSensorDataFile.close();
+
+        fGyroSensorDataFile.flush();
+        fGyroSensorDataFile.close();
+
+    }
     override fun onStart() {
         super.onStart()
         mSensorManager.registerListener(this, mGyroscope, SensorManager.SENSOR_DELAY_NORMAL);
         mSensorManager.registerListener(this, mAccelerometer, SensorManager.SENSOR_DELAY_NORMAL);
-
     }
 
     override fun onStop() {
         super.onStop()
         mSensorManager.unregisterListener(this, mGyroscope);
         mSensorManager.unregisterListener(this, mAccelerometer);
-
-        fGyroSensorDataFile.flush()
-        fAccelerometerSensorDataFile.flush()
     }
 
     override fun onSensorChanged(event: SensorEvent?) {
@@ -193,10 +207,16 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             twGyroY.text = resources.getString(R.string.gyroscope_label_y, fGyroY);
             twGyroZ.text = resources.getString(R.string.gyroscope_label_z, fGyroZ);
 
-            if (bWriteSensorData) {
-                val fTimestamp: Float = (Calendar.getInstance().timeInMillis - lApplicationStartTime).toFloat();
-                fGyroSensorDataFile.write("%f;%f;%f;%f\n".format(fTimestamp, fGyroX, fGyroY, fGyroZ));
+            writeSensorDataLock.lock()
+            try {
+                if (bWriteSensorData) {
+                    val fTimestamp: Float = (Calendar.getInstance().timeInMillis - lApplicationStartTime).toFloat();
+                    fGyroSensorDataFile.write("%f;%f;%f;%f\n".format(fTimestamp, fGyroX, fGyroY, fGyroZ));
+                }
+            } finally {
+                writeSensorDataLock.unlock()
             }
+
         }
 
         if (iSensorType == Sensor.TYPE_ACCELEROMETER) {
@@ -208,13 +228,37 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             twAccelY.text = resources.getString(R.string.accelerometer_label_y, fAccelY);
             twAccelZ.text = resources.getString(R.string.accelerometer_label_z, fAccelZ);
 
-            if (bWriteSensorData) {
-                val fTimestamp: Float = (Calendar.getInstance().timeInMillis - lApplicationStartTime).toFloat();
-                fAccelerometerSensorDataFile.write("%f;%f;%f;%f\n".format(fTimestamp, fAccelX, fAccelY, fAccelZ));
+            writeSensorDataLock.lock()
+            try {
+                if (bWriteSensorData) {
+                    val fTimestamp: Float = (Calendar.getInstance().timeInMillis - lApplicationStartTime).toFloat();
+                    fAccelerometerSensorDataFile.write("%f;%f;%f;%f\n".format(fTimestamp, fAccelX, fAccelY, fAccelZ));
+                }
+            } finally {
+                writeSensorDataLock.unlock()
             }
+
+
         }
     }
 
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
+    }
+
+    override fun onCheckedChanged(buttonView: CompoundButton?, isChecked: Boolean) {
+        print("Event.")
+        writeSensorDataLock.lock()
+        try {
+            if (isChecked) {
+                createSensorDataFiles()
+                bWriteSensorData = true;
+            }
+            else {
+                bWriteSensorData = false;
+                flushAndCloseSensorDataFiles()
+            }
+        } finally {
+            writeSensorDataLock.unlock()
+        }
     }
 }
