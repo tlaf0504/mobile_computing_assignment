@@ -166,8 +166,8 @@ class MainActivity : AppCompatActivity(), SensorEventListener, CompoundButton.On
             e.printStackTrace();
         }
 
-        fGyroSensorDataFile.write("time;x;y;z\n");
-        fAccelerometerSensorDataFile.write("time;x;y;z\n");
+        fGyroSensorDataFile.write("#time;x;y;z\n");
+        fAccelerometerSensorDataFile.write("ätime;x;y;z\n");
     }
 
     private fun flushAndCloseSensorDataFiles() {
