@@ -2,6 +2,8 @@
 
 Repository for my [Mobile-Computing Laboratory](https://github.com/osaukh/mobile_computing_lab/) assigment in Summer-Term 2021.
 
+The final target is to develop an activity-recognition app, being capable of classifying several strength training exercises. (e.g. push-ups etc.)
+
 ### General Information
 The [App](https://github.com/tlaf0504/mobile_computing_assignment/tree/master/AndroidApp) requires at least **Android 8.1** and was developed on an **LG Q6** smartphone.
 
