@@ -2,10 +2,6 @@ package com.example.mobilecomputingassignment
 
 import android.Manifest.permission.READ_EXTERNAL_STORAGE
 import android.Manifest.permission.WRITE_EXTERNAL_STORAGE
-import android.bluetooth.BluetoothAdapter
-import android.bluetooth.BluetoothDevice
-import android.bluetooth.BluetoothManager
-import android.bluetooth.BluetoothSocket
 import android.content.Context
 import android.hardware.Sensor
 import android.hardware.SensorEvent
@@ -67,19 +63,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener, CompoundButton.On
     private var gyroSensorFillCounter : Int = 0;
     private var accelSensorFillCounter : Int = 0;
 
-
-    // ========== Bluetooth stuff
-    private lateinit var bluetoothManager: BluetoothManager
-    private lateinit var bluetoothAdapter: BluetoothAdapter;
-    private lateinit var connectedBluetoothDevice: BluetoothDevice;
-    private lateinit var bluetoothSocket: BluetoothSocket;
-
-    private val REQUEST_ENABLE_BT: Int = 1;
-    private val bluetoothUUID = UUID.fromString("53eef5bf-6702-4ab6-bcf3-ae02a401d70e");
-
-    private lateinit var inputStream: InputStream;
-    private lateinit var outputStream: OutputStream;
-
     // ========== FileIO Stuff
     private lateinit var fGyroSensorDataFile: FileWriter;
     private lateinit var fAccelerometerSensorDataFile: FileWriter;
@@ -135,32 +118,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener, CompoundButton.On
         swSensorDataRecordingSwitch = findViewById(R.id.recording_switch);
         swSensorDataRecordingSwitch.setOnCheckedChangeListener(this);
 
-
-
-        /* ========== Establish bluetooth connection ========== */
-        // Currently, sensor-data transmission via Bluetooth is disabled.
-        /*
-        bluetoothManager = getSystemService(BLUETOOTH_SERVICE) as BluetoothManager;
-        bluetoothAdapter = bluetoothManager.adapter
-
-        // Enable bluetooth adapter if necessary
-        if (bluetoothAdapter.isEnabled) {
-            val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
-            startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT)
-        }
-
-        // This is ugly. Improve it...
-        val connectedBluetoothDevices: MutableSet<BluetoothDevice> =
-                bluetoothAdapter.bondedDevices;
-        connectedBluetoothDevice = connectedBluetoothDevices.elementAt(0);
-
-        bluetoothSocket = connectedBluetoothDevice.createRfcommSocketToServiceRecord(bluetoothUUID);
-        bluetoothSocket.connect();
-
-        // Finally, get the streams for sending and receiving data
-        inputStream = bluetoothSocket.inputStream;
-        outputStream = bluetoothSocket.outputStream;
-         */
     }
 
     private fun createSensorDataFiles() {
@@ -312,8 +269,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener, CompoundButton.On
             } finally {
                 writeSensorDataLock.unlock()
             }
-
-
         }
     }
 
