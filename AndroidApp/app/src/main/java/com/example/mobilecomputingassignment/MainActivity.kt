@@ -8,9 +8,8 @@ import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.os.Bundle
-import android.widget.TextView
-import android.widget.Switch
-import android.widget.CompoundButton
+import android.view.View
+import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import java.io.*
 import java.util.*
@@ -19,7 +18,7 @@ import java.util.concurrent.locks.ReentrantLock
 
 // Libraries for File IO
 
-class MainActivity : AppCompatActivity(), SensorEventListener, CompoundButton.OnCheckedChangeListener {
+class MainActivity : AppCompatActivity(), SensorEventListener, CompoundButton.OnCheckedChangeListener, AdapterView.OnItemSelectedListener {
 
 
     // ========== Sensor-data stuff
@@ -34,6 +33,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener, CompoundButton.On
     private lateinit var twAccelX: TextView;
     private lateinit var twAccelY: TextView;
     private lateinit var twAccelZ: TextView;
+    private lateinit var spActivitySelectionSpinner: Spinner;
 
     private var captureStartTimestamp: Long = Calendar.getInstance().timeInMillis;
 
@@ -67,6 +67,8 @@ class MainActivity : AppCompatActivity(), SensorEventListener, CompoundButton.On
     private lateinit var fGyroSensorDataFile: FileWriter;
     private lateinit var fAccelerometerSensorDataFile: FileWriter;
 
+    private lateinit var strSelectedActivity: String;
+
     private lateinit var swSensorDataRecordingSwitch: Switch;
 
     private var bWriteSensorData: Boolean = false;
@@ -77,7 +79,21 @@ class MainActivity : AppCompatActivity(), SensorEventListener, CompoundButton.On
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        /* Initialization-code taken from
+         * https://developer.android.com/guide/topics/ui/controls/spinner (2021-04-07)
+         */
+        spActivitySelectionSpinner = findViewById(R.id.activity_selection_spinner)
+        spActivitySelectionSpinner.onItemSelectedListener = this // Register Listener
 
+        ArrayAdapter.createFromResource(
+                this,
+                R.array.activity_selection_spinner_entries,
+                android.R.layout.simple_spinner_item
+        ).also {adapter ->
+            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            spActivitySelectionSpinner.adapter = adapter}
+
+        /* ========== Initialize sensors ========== */
         mSensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager;
         twGyroX = findViewById(R.id.label_gyro_x);
         twGyroY = findViewById(R.id.label_gyro_y);
@@ -85,6 +101,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener, CompoundButton.On
         twAccelX = findViewById(R.id.label_accel_x);
         twAccelY = findViewById(R.id.label_accel_y);
         twAccelZ = findViewById(R.id.label_accel_z);
+
 
         mGyroscope = mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
         val isGyroNull = mGyroscope == null;
@@ -117,6 +134,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener, CompoundButton.On
         // Register event-listener for sensor-data recording switch.
         swSensorDataRecordingSwitch = findViewById(R.id.recording_switch);
         swSensorDataRecordingSwitch.setOnCheckedChangeListener(this);
+        spActivitySelectionSpinner.selectedItem
 
     }
 
@@ -124,7 +142,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener, CompoundButton.On
         var strDate: String = Calendar.getInstance().timeInMillis.toString()
         strDate = strDate.replace(oldValue = " ", newValue = "_")
 
-        val gyroSensorDataFilePath = File(filesDir, "gyro_sensor_data_%s.txt".format(strDate));
+        val gyroSensorDataFilePath = File(filesDir, "%s_gyro_sensor_data_%s.txt".format(strSelectedActivity, strDate));
         try {
             fGyroSensorDataFile = FileWriter(gyroSensorDataFilePath);
         } catch (e: FileNotFoundException) {
@@ -133,7 +151,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener, CompoundButton.On
             e.printStackTrace();
         }
 
-        val accelerometerSensorDataFilePath = File(filesDir, "accel_sensor_data_%s.txt".format(strDate));
+        val accelerometerSensorDataFilePath = File(filesDir, "%s_accel_sensor_data_%s.txt".format(strSelectedActivity, strDate));
         try {
             fAccelerometerSensorDataFile = FileWriter(accelerometerSensorDataFilePath);
         } catch (e: FileNotFoundException) {
@@ -288,15 +306,33 @@ class MainActivity : AppCompatActivity(), SensorEventListener, CompoundButton.On
 
                 captureStartTimestamp = Calendar.getInstance().timeInMillis
                 bWriteSensorData = true;
+
+                spActivitySelectionSpinner.isEnabled = false;
             }
             else {
                 bWriteSensorData = false;
                 createSensorDataFiles();
                 writeAllSensorData();
                 flushAndCloseSensorDataFiles();
+
+                spActivitySelectionSpinner.isEnabled = true;
             }
         } finally {
             writeSensorDataLock.unlock()
         }
+    }
+
+    // Callback for Spinner (AdapterView.OnItemSelectedListener)
+    override fun onItemSelected(parent: AdapterView<*>, view: View?, pos: Int, id: Long) {
+
+        // An item was selected. You can retrieve the selected item using
+        // parent.getItemAtPosition(pos)
+        val selected_item = parent.getItemAtPosition(pos)
+        strSelectedActivity = selected_item.toString()
+
+    }
+
+    // Must be implemented by class for AdapterView.OnItemSelectedListener
+    override fun onNothingSelected(parent: AdapterView<*>) {
     }
 }
