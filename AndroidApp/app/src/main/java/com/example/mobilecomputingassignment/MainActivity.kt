@@ -167,7 +167,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener, CompoundButton.On
         }
 
         fGyroSensorDataFile.write("#time;x;y;z\n");
-        fAccelerometerSensorDataFile.write("ätime;x;y;z\n");
+        fAccelerometerSensorDataFile.write("#time;x;y;z\n");
     }
 
     private fun flushAndCloseSensorDataFiles() {
@@ -203,11 +203,11 @@ class MainActivity : AppCompatActivity(), SensorEventListener, CompoundButton.On
             val fGyroY : Float = event.values[1];
             val fGyroZ : Float = event.values[2];
 
-            /*
+
             twGyroX.text = resources.getString(R.string.gyroscope_label_x, fGyroX);
             twGyroY.text = resources.getString(R.string.gyroscope_label_y, fGyroY);
             twGyroZ.text = resources.getString(R.string.gyroscope_label_z, fGyroZ);
-            */
+            
 
             writeSensorDataLock.lock()
             try {
@@ -226,11 +226,11 @@ class MainActivity : AppCompatActivity(), SensorEventListener, CompoundButton.On
             val fAccelY : Float = event.values[1];
             val fAccelZ : Float = event.values[2];
 
-            /*
+
             twAccelX.text = resources.getString(R.string.accelerometer_label_x, fAccelX);
             twAccelY.text = resources.getString(R.string.accelerometer_label_y, fAccelY);
             twAccelZ.text = resources.getString(R.string.accelerometer_label_z, fAccelZ);
-            */
+
 
             writeSensorDataLock.lock()
             try {
