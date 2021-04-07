@@ -39,16 +39,33 @@ class MainActivity : AppCompatActivity(), SensorEventListener, CompoundButton.On
     private lateinit var twAccelY: TextView;
     private lateinit var twAccelZ: TextView;
 
-    private var lApplicationStartTime: Long = Calendar.getInstance().timeInMillis;
+    private var captureStartTimestamp: Long = Calendar.getInstance().timeInMillis;
 
-    // Sensor data. First column: timestamps, second column: sensor-values
-    // Currently disables as Bluetooth-transmission of sensor-data is currently not required.
-    /*
-    private val arrSensorData = arrayOf(
-            floatArrayOf(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
-            floatArrayOf(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)
+
+    /* Create 2D-Arrays for storing sensor-data. Each row contains 4 float-values:
+    * 1.) The Timestamp
+    * 2.) The sensors x-value
+    * 3.) The sensors y-value
+    * 4.) The sensors z-value. */
+
+    private val gyroSensorArray = arrayOf(
+            Array<Float>(size=1_000_000, init={-1.0F}),
+            Array<Float>(size=1_000_000, init={0.0F}),
+            Array<Float>(size=1_000_000, init={0.0F}),
+            Array<Float>(size=1_000_000, init={0.0F})
     );
-    */
+
+    private val accelSensorArray = arrayOf(
+            Array<Float>(size=1_000_000, init={-1.0F}),
+            Array<Float>(size=1_000_000, init={0.0F}),
+            Array<Float>(size=1_000_000, init={0.0F}),
+            Array<Float>(size=1_000_000, init={0.0F})
+    );
+
+    // Counters used by the sensor-listeners to fill the sensor-arrays.
+    // Int is used as Kotlin in version 1.3 only supports unsigned integers as experimental feature.
+    private var gyroSensorFillCounter : Int = 0;
+    private var accelSensorFillCounter : Int = 0;
 
 
     // ========== Bluetooth stuff
@@ -147,7 +164,9 @@ class MainActivity : AppCompatActivity(), SensorEventListener, CompoundButton.On
     }
 
     private fun createSensorDataFiles() {
-        val strDate: String = Calendar.getInstance().time.toString()
+        var strDate: String = Calendar.getInstance().timeInMillis.toString()
+        strDate = strDate.replace(oldValue = " ", newValue = "_")
+
         val gyroSensorDataFilePath = File(filesDir, "gyro_sensor_data_%s.txt".format(strDate));
         try {
             fGyroSensorDataFile = FileWriter(gyroSensorDataFilePath);
@@ -166,6 +185,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener, CompoundButton.On
             e.printStackTrace();
         }
 
+        // Write the file-headers. Use a '#' to indicate a comment-line.
         fGyroSensorDataFile.write("#time;x;y;z\n");
         fAccelerometerSensorDataFile.write("#time;x;y;z\n");
     }
@@ -178,6 +198,44 @@ class MainActivity : AppCompatActivity(), SensorEventListener, CompoundButton.On
         fGyroSensorDataFile.close();
 
     }
+
+    private fun writeAllSensorData() {
+        writeArrayToFile(gyroSensorArray, fGyroSensorDataFile);
+        writeArrayToFile(accelSensorArray, fAccelerometerSensorDataFile);
+    }
+
+    private fun writeArrayToFile(array: Array<Array<Float>>, file: FileWriter) {
+        val N_rows : Int = array[0].size
+
+        for (k : Int in 0 until N_rows) {
+            /* The first column states the time-stamp of the measurement. This column is filled
+            *  with -1 when starting a new capture. The first value < 0.0
+            *  therefore indicated the end of the current caputre.
+            */
+            if (array[0][k] >= 0.0) {
+                val t : Float = array[0][k]
+                val x : Float = array[1][k]
+                val y : Float = array[2][k]
+                val z : Float = array[3][k]
+
+                file.write("%f;%f;%f;%f\n".format(t, x, y, z));
+            }
+            else { break; }
+        }
+    }
+
+    /* Clean the content of the given sensor-data array. The first column is filled with (-1)s,
+    the remaining 3 columns are filled with zeros.
+    As the array is successively filled in the sensor-event listener, one can determine the total
+    amount of measurement samples by searching for the first negative value in the first column.
+     */
+    private fun cleanSensorDataArray(array: Array<Array<Float>>) {
+        array[0].fill(element=-1.0F)
+        array[1].fill(element=0.0F)
+        array[2].fill(element=0.0F)
+        array[3].fill(element=0.0F)
+    }
+
     override fun onStart() {
         super.onStart()
         mSensorManager.registerListener(this, mGyroscope, SensorManager.SENSOR_DELAY_NORMAL);
@@ -203,17 +261,24 @@ class MainActivity : AppCompatActivity(), SensorEventListener, CompoundButton.On
             val fGyroY : Float = event.values[1];
             val fGyroZ : Float = event.values[2];
 
-
+            /* The code below is uncommented on purpose to show the current sensor values on the
+            *  screen. In the release version it stays commented to save computation-time.*/
+            /*
             twGyroX.text = resources.getString(R.string.gyroscope_label_x, fGyroX);
             twGyroY.text = resources.getString(R.string.gyroscope_label_y, fGyroY);
             twGyroZ.text = resources.getString(R.string.gyroscope_label_z, fGyroZ);
-            
+            */
 
             writeSensorDataLock.lock()
             try {
-                if (bWriteSensorData) {
-                    val fTimestamp: Float = (Calendar.getInstance().timeInMillis - lApplicationStartTime).toFloat();
-                    fGyroSensorDataFile.write("%f;%f;%f;%f\n".format(fTimestamp, fGyroX, fGyroY, fGyroZ));
+                if (bWriteSensorData && gyroSensorFillCounter < gyroSensorArray[0].size) {
+                    gyroSensorArray[0][gyroSensorFillCounter] = (Calendar.getInstance().timeInMillis - captureStartTimestamp).toFloat();
+                    gyroSensorArray[1][gyroSensorFillCounter] = fGyroX;
+                    gyroSensorArray[2][gyroSensorFillCounter] = fGyroY;
+                    gyroSensorArray[3][gyroSensorFillCounter] = fGyroZ;
+
+                    gyroSensorFillCounter++;
+
                 }
             } finally {
                 writeSensorDataLock.unlock()
@@ -226,17 +291,23 @@ class MainActivity : AppCompatActivity(), SensorEventListener, CompoundButton.On
             val fAccelY : Float = event.values[1];
             val fAccelZ : Float = event.values[2];
 
-
+            /* The code below is uncommented on purpose to show the current sensor values on the
+            *  screen. In the release version it stays commented to save computation-time.*/
+            /*
             twAccelX.text = resources.getString(R.string.accelerometer_label_x, fAccelX);
             twAccelY.text = resources.getString(R.string.accelerometer_label_y, fAccelY);
             twAccelZ.text = resources.getString(R.string.accelerometer_label_z, fAccelZ);
-
+            */
 
             writeSensorDataLock.lock()
             try {
-                if (bWriteSensorData) {
-                    val fTimestamp: Float = (Calendar.getInstance().timeInMillis - lApplicationStartTime).toFloat();
-                    fAccelerometerSensorDataFile.write("%f;%f;%f;%f\n".format(fTimestamp, fAccelX, fAccelY, fAccelZ));
+                if (bWriteSensorData && accelSensorFillCounter < accelSensorArray[0].size) {
+                    accelSensorArray[0][accelSensorFillCounter] = (Calendar.getInstance().timeInMillis - captureStartTimestamp).toFloat();
+                    accelSensorArray[1][accelSensorFillCounter] = fAccelX;
+                    accelSensorArray[2][accelSensorFillCounter] = fAccelY;
+                    accelSensorArray[3][accelSensorFillCounter] = fAccelZ;
+
+                    accelSensorFillCounter++;
                 }
             } finally {
                 writeSensorDataLock.unlock()
@@ -249,17 +320,25 @@ class MainActivity : AppCompatActivity(), SensorEventListener, CompoundButton.On
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
     }
 
+    /* Listener for data-capturing button state change. */
     override fun onCheckedChanged(buttonView: CompoundButton?, isChecked: Boolean) {
-        print("Event.")
         writeSensorDataLock.lock()
         try {
             if (isChecked) {
-                createSensorDataFiles()
+                cleanSensorDataArray(gyroSensorArray);
+                gyroSensorFillCounter = 0;
+
+                cleanSensorDataArray(accelSensorArray);
+                accelSensorFillCounter = 0;
+
+                captureStartTimestamp = Calendar.getInstance().timeInMillis
                 bWriteSensorData = true;
             }
             else {
                 bWriteSensorData = false;
-                flushAndCloseSensorDataFiles()
+                createSensorDataFiles();
+                writeAllSensorData();
+                flushAndCloseSensorDataFiles();
             }
         } finally {
             writeSensorDataLock.unlock()
