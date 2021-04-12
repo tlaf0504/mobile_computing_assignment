@@ -16,26 +16,26 @@ def resample_3d_timeseries(y:np.ndarray, t:np.ndarray, f_resample:Union[float,in
     
 
 
-def plot_sensor_data(data_array:np.ndarray, title:str, ylabels:str):
+def plot_sensor_data(data_array:np.ndarray, title:str, ylabels:str, fig=None):
     
     N_subplots = int(data_array.shape[1] - 1)
     assert len(ylabels) == N_subplots
     
-    t = data_array[:,0] * 1e-3
-    
-    fig = plt.figure()
+    t = data_array[:,0]
+    if fig is not None:
+        fig = plt.figure(figsize=(16,9))
     
     for k in range(N_subplots):
-        plt.subplot(N_subplots,1,k+1)
-        plt.plot(t, data_array[:,k + 1])
-        plt.xlabel("Time in s")
-        plt.ylabel(ylabels[k])
-        plt.grid("major")
-        plt.grid(which="minor", linestyle="--")
+        ax = plt.subplot(N_subplots,1,k+1)
+        ax.plot(t, data_array[:,k + 1])
+        ax.set_xlabel("Time in s")
+        ax.set_ylabel(ylabels[k])
+        ax.grid("major")
+        ax.grid(which="minor", linestyle="--")
         plt.minorticks_on()
         
         if k == 0:
-            plt.title(title)
+            ax.set_title(title)
 
     
     plt.tight_layout()
