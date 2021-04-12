@@ -22,11 +22,18 @@ def plot_sensor_data(data_array:np.ndarray, title:str, ylabels:str, fig=None):
     assert len(ylabels) == N_subplots
     
     t = data_array[:,0]
-    if fig is not None:
-        fig = plt.figure(figsize=(16,9))
+    if fig is None:
+        fig_ = plt.figure(figsize=(16,9))
+        
+    else:
+        fig_ = fig
     
     for k in range(N_subplots):
-        ax = plt.subplot(N_subplots,1,k+1)
+        if fig is None:
+            ax = fig_.add_subplot(N_subplots,1,k+1)
+        else:
+            ax = fig_.axes[k]
+
         ax.plot(t, data_array[:,k + 1])
         ax.set_xlabel("Time in s")
         ax.set_ylabel(ylabels[k])
@@ -40,4 +47,4 @@ def plot_sensor_data(data_array:np.ndarray, title:str, ylabels:str, fig=None):
     
     plt.tight_layout()
     plt.show()
-    return fig
+    return fig_
