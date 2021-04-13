@@ -53,3 +53,14 @@ def plot_sensor_data(data_array:np.ndarray, title:str, ylabels:str, fig=None, cu
     plt.tight_layout()
     plt.show()
     return fig_
+
+def load_and_resample_data(path:str, src_type="txt"):
+    if src_type == "txt":
+        data = np.loadtxt(path)
+    elif src_type == "npy":
+        data = np.load(path, allow_pickle=True)
+    else:
+        raise Exception("File-type {:s} not implemented.".format(src_type))
+
+    data[:,0] = data[:,0] * 1e-3 # Convert milli-seconds to seconds
+    return data
