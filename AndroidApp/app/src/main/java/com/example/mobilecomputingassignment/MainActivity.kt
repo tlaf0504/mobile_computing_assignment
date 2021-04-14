@@ -18,7 +18,10 @@ import java.util.concurrent.locks.ReentrantLock
 
 // Libraries for File IO
 
-class MainActivity : AppCompatActivity(), SensorEventListener, CompoundButton.OnCheckedChangeListener, AdapterView.OnItemSelectedListener {
+class MainActivity : AppCompatActivity(),
+        SensorEventListener,
+        CompoundButton.OnCheckedChangeListener,
+        AdapterView.OnItemSelectedListener {
 
 
     // ========== Sensor-data stuff
