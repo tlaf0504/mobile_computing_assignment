@@ -27,6 +27,10 @@ class MainActivity : AppCompatActivity(),
         this.bActivityRecognition.setOnClickListener(this);
         this.bDataCapturing.setOnClickListener(this);
 
+        // Debug-code. Move directly to activity-recognition.
+        val intent = Intent(this, ActivityRecognition::class.java)
+        startActivity(intent);
+
     }
 
     override fun onClick(v: View?) {
