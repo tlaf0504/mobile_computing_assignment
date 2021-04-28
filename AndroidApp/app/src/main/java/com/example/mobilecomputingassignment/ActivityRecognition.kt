@@ -22,6 +22,7 @@ import java.util.concurrent.locks.*
 import java.util.concurrent.*
 import java.util.regex.Matcher
 import java.util.regex.Pattern
+import kotlin.math.max
 import kotlin.math.pow
 
 class ActivityRecognition : AppCompatActivity(), SensorEventListener, View.OnClickListener {
@@ -368,32 +369,34 @@ class ClassificationThread
 
         while(!terminateThread) {
 
-            if (useTestData) {
-                val activity = doComputation(gyroTestData[currentTestIndex],
-                                             accelTestData[currentTestIndex])
-                val expected_activity = testClasses[currentTestIndex];
-
-                println("Idx: ${currentTestIndex}\tExpected: ${expected_activity}\tCalculated: ${activity}")
-                currentTestIndex = (currentTestIndex + 1) % testsetSize;
-                break;
-            }
 
             // Wait until the timer-task triggers the classification
             synchronizationLock.lock()
             synchronizationCondition.await()
 
-            // Switch to the inactive buffer for storing the sensor-data.
-            activityThread.switchBufferSet()
+            if (useTestData) {
+                val activity = doComputation(gyroTestData[currentTestIndex],
+                        accelTestData[currentTestIndex])
+                val expected_activity = testClasses[currentTestIndex];
 
-            // Get the new inactive buffer-set for processing.
-            val sensorData = activityThread.getInactiveBufferSet()
+                println("Idx: ${currentTestIndex}\tExpected: ${expected_activity}\tCalculated: ${activity}")
+                currentTestIndex = (currentTestIndex + 1) % testsetSize;
 
-            // Do the computation
-            val activity = doComputation(sensorData[0], sensorData[1])
+            } else {
 
-            // Clean-up the currently inactive buffer to be ready for filling after the next
-            // timer-event.
-            activityThread.cleanInactiveBufferSet()
+                // Switch to the inactive buffer for storing the sensor-data.
+                activityThread.switchBufferSet()
+
+                // Get the new inactive buffer-set for processing.
+                val sensorData = activityThread.getInactiveBufferSet()
+
+                // Do the computation
+                val activity = doComputation(sensorData[0], sensorData[1])
+
+                // Clean-up the currently inactive buffer to be ready for filling after the next
+                // timer-event.
+                activityThread.cleanInactiveBufferSet()
+            }
         }
     }
 
@@ -409,10 +412,9 @@ class ClassificationThread
             return -1
         }
         val resampledSensorData = doResampling(clippedData[0], clippedData[1])
-        val sensorDataWithouOffset = removeOffsets(resampledSensorData[0], resampledSensorData[1])
-        val energies = calcEnergies(sensorDataWithouOffset[0], sensorDataWithouOffset[1])
+        val sensorDataWithoutOffset = removeOffsets(resampledSensorData[0], resampledSensorData[1])
+        val energies = calcEnergies(sensorDataWithoutOffset[0], sensorDataWithoutOffset[1])
         val res = doClassification(energies[0], energies[1])
-        print("Result: ${res}\n")
         return res
     }
 
@@ -440,10 +442,10 @@ class ClassificationThread
         var idx_end: Int = -1;
         val t0 = dataArray[0][0];
 
-        for (k in 0 until dataArray[0].size) {
+        for (k in 0 until dataArray[0].size - 1) {
 
             // Clip data at a 10 seconds time-frame
-            if (dataArray[0][k] - t0 >= 10) {
+            if (dataArray[0][k] - t0 >= 1000.0) {
                 idx_end = k;
                 break;
             // OR use all samples if the dataset contains less than 10 seconds.
@@ -451,6 +453,10 @@ class ClassificationThread
                 idx_end = k-1
                 break;
             }
+        }
+
+        if (idx_end == -1) {
+            idx_end = dataArray[0].size - 1
         }
 
         return arrayOf(
@@ -499,8 +505,8 @@ class ClassificationThread
             val delta_t = (tk - ti) / (tip1 - ti);
 
             x1[k] = (x1_ip1 - x1_i) * delta_t + x1_i;
-            x2[k] = (x2_ip1 - x1_i) * delta_t + x2_i;
-            x1[k] = (x3_ip1 - x3_i) * delta_t + x3_i;
+            x2[k] = (x2_ip1 - x2_i) * delta_t + x2_i;
+            x3[k] = (x3_ip1 - x3_i) * delta_t + x3_i;
             /* <<===== */
         }
 
@@ -569,10 +575,30 @@ class ClassificationThread
             euclideanDistances[k] = euclideanDistance(energy_vector, neighbors[k]);
         }
 
-        val indices: IntArray = (0..neighbors.size).toList().toIntArray();
-        //val indices_of_distances = indices.sortedBy { euclideanDistances[it] };
+        val neighbor_indices: IntArray = (0..neighbors.size - 1).toList().toIntArray();
+        val sorted_neighbor_indices = neighbor_indices.sortedBy { idx -> euclideanDistances[idx] }
+        val classes_of_nearest_neighbors = neighbor_classes.sliceArray(sorted_neighbor_indices)
 
-        return -1
+        return kMajorityVoting(classes_of_nearest_neighbors, 3)
+    }
+
+    private fun kMajorityVoting(sortedClassesOfNearestNeighbors: Array<Int>, k:Int):Int {
+        val maxClass: Int = (sortedClassesOfNearestNeighbors.maxOrNull()?: 0) + 1
+        val classCounters = Array<Int>(size = maxClass, init = {0})
+
+        for (l in 0 until k) {
+            classCounters[sortedClassesOfNearestNeighbors[k]]++;
+        }
+
+        var _class_max: Int = -1;
+        var _class: Int = -1;
+        for (l in 0 until maxClass) {
+            if (classCounters[l] > _class_max) {
+                _class_max = classCounters[l];
+                _class = l;
+            }
+        }
+        return _class
     }
 
     private fun euclideanDistance(v1: Array<Float>, v2: Array<Float>): Float {
@@ -584,7 +610,7 @@ class ClassificationThread
         }
 
         // Square-root of sum
-        return diff.sum().pow(1/2);
+        return diff.sum().pow(x = 0.5F);
     }
 
 }
@@ -656,9 +682,9 @@ class TestSetLoader {
         val accelData: MutableList<Array<Array<Float>>> = mutableListOf();
         val activityClassPerFilePair: MutableList<Int> = mutableListOf();
 
-        val gyroRegexPattern: Pattern = Pattern.compile(".*_gyro_.*\\.txt");
+        val gyroRegexPattern: Pattern = Pattern.compile(".*_gyro_.*\\.csv");
 
-        for (l in 0 until activityDirectories.size - 1) {
+        for (l in 0 until activityDirectories.size) {
             val subdir_abspath: Path = Paths.get(testsetDirectory, activityDirectories[l])
             val subdir_object: File = subdir_abspath.toFile()
 
@@ -684,6 +710,7 @@ class TestSetLoader {
 
 
     private fun readCSVSensorDataFile(file:String): Array<Array<Float>> {
+
         val data: MutableList<Array<Float>> = mutableListOf();
 
         val reader: BufferedReader = File(file).bufferedReader()
@@ -695,7 +722,7 @@ class TestSetLoader {
                         tokens[0].toFloat(), // Time
                         tokens[1].toFloat(), // Data x
                         tokens[2].toFloat(), // Data y
-                        tokens[2].toFloat()  // Data z
+                        tokens[3].toFloat()  // Data z
                 )
                 data.add(element = tmp);
 
@@ -705,6 +732,22 @@ class TestSetLoader {
             line = reader.readLine()
         }
         reader.close()
-        return data.toTypedArray()
+
+        val N_samples = data.size
+        val dataArray: Array<Array<Float>> = arrayOf(
+                Array<Float>(N_samples, init = {0.0F}),
+                Array<Float>(N_samples, init = {0.0F}),
+                Array<Float>(N_samples, init = {0.0F}),
+                Array<Float>(N_samples, init = {0.0F})
+        )
+
+        // Convert from row-indices first to column-indices first, to match the required data-format
+        for (k in 0 until N_samples) {
+            dataArray[0][k] = data[k][0]
+            dataArray[1][k] = data[k][1]
+            dataArray[2][k] = data[k][2]
+            dataArray[3][k] = data[k][3]
+        }
+        return dataArray
     }
 }

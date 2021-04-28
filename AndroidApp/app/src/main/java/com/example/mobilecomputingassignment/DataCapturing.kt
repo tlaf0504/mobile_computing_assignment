@@ -52,17 +52,17 @@ class DataCapturing : AppCompatActivity(),
     * 4.) The sensors z-value. */
 
     private val gyroSensorArray = arrayOf(
-        Array<Float>(size=1_000_000, init={-1.0F}),
-        Array<Float>(size=1_000_000, init={0.0F}),
-        Array<Float>(size=1_000_000, init={0.0F}),
-        Array<Float>(size=1_000_000, init={0.0F})
+        Array<Float>(size=5_000, init={-1.0F}),
+        Array<Float>(size=5_000, init={0.0F}),
+        Array<Float>(size=5_000, init={0.0F}),
+        Array<Float>(size=5_000, init={0.0F})
     );
 
     private val accelSensorArray = arrayOf(
-        Array<Float>(size=1_000_000, init={-1.0F}),
-        Array<Float>(size=1_000_000, init={0.0F}),
-        Array<Float>(size=1_000_000, init={0.0F}),
-        Array<Float>(size=1_000_000, init={0.0F})
+        Array<Float>(size=5_000, init={-1.0F}),
+        Array<Float>(size=5_000, init={0.0F}),
+        Array<Float>(size=5_000, init={0.0F}),
+        Array<Float>(size=5_000, init={0.0F})
     );
 
     // Counters used by the sensor-listeners to fill the sensor-arrays.
