@@ -38,34 +38,38 @@
             <TextView
                 android:layout_height="wrap_content"
                 android:layout_column="1"
-                android:text="Percentage"
+                android:text="@string/activty_1_percentage"
                 android:layout_gravity="center_vertical"
                 android:gravity="right"
-                android:layout_weight="20"
+                android:layout_weight="50"
                 />
 
-            <ImageView
-                android:layout_height="match_parent"
+            <TextView
+                android:layout_height="50pt"
                 android:layout_column="1"
                 android:layout_marginStart="5pt"
-                android:layout_marginEnd="10pt"
-                app:srcCompat="@android:drawable/btn_star_big_on"
-                android:layout_weight="20"/>
+                android:layout_marginEnd="2pt"
+                android:text="Triceps Curls"
+                android:layout_gravity="center_vertical"
+                android:gravity="center"
+                android:background="@drawable/border"/>
 
-            <ImageView
-                android:layout_height="match_parent"
-                android:layout_column="4"
-                android:layout_marginStart="10pt"
+            <TextView
+                android:layout_height="50pt"
+                android:layout_column="1"
+                android:layout_marginStart="2pt"
                 android:layout_marginEnd="5pt"
-                app:srcCompat="@android:drawable/btn_star_big_on"
-                android:layout_weight="20"/>
+                android:text="Bizeps Curls"
+                android:layout_gravity="center_vertical"
+                android:gravity="center"
+                android:background="@drawable/border"/>
 
             <TextView
                 android:layout_height="wrap_content"
                 android:layout_column="5"
-                android:text="Percentage"
+                android:text="@string/activty_3_percentage"
                 android:layout_gravity="center_vertical"
-                android:layout_weight="20"
+                android:layout_weight="50"
                 />
         </TableRow>
 
@@ -77,34 +81,38 @@
             <TextView
                 android:layout_height="wrap_content"
                 android:layout_column="1"
-                android:text="Percentage"
+                android:text="@string/activty_2_percentage"
                 android:layout_gravity="center_vertical"
                 android:gravity="right"
-                android:layout_weight="20"
+                android:layout_weight="50"
                 />
 
-            <ImageView
-                android:layout_height="match_parent"
+            <TextView
+                android:layout_height="50pt"
                 android:layout_column="1"
                 android:layout_marginStart="5pt"
-                android:layout_marginEnd="10pt"
-                app:srcCompat="@android:drawable/btn_star_big_on"
-                android:layout_weight="20"/>
+                android:layout_marginEnd="2pt"
+                android:text="Russian Twist"
+                android:layout_gravity="center_vertical"
+                android:gravity="center"
+                android:background="@drawable/border"/>
 
-            <ImageView
-                android:layout_height="match_parent"
-                android:layout_column="4"
-                android:layout_marginStart="10pt"
+            <TextView
+                android:layout_height="50pt"
+                android:layout_column="1"
+                android:layout_marginStart="2pt"
                 android:layout_marginEnd="5pt"
-                app:srcCompat="@android:drawable/btn_star_big_on"
-                android:layout_weight="20"/>
+                android:text="Crunches"
+                android:layout_gravity="center_vertical"
+                android:gravity="center"
+                android:background="@drawable/border"/>
 
             <TextView
                 android:layout_height="wrap_content"
                 android:layout_column="5"
-                android:text="Percentage"
+                android:text="@string/activty_4_percentage"
                 android:layout_gravity="center_vertical"
-                android:layout_weight="20"
+                android:layout_weight="50"
                 />
         </TableRow>
 
