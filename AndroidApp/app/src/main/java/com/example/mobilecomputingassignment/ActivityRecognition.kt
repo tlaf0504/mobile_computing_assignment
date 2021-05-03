@@ -35,46 +35,38 @@ class ActivityRecognition : AppCompatActivity(), SensorEventListener, View.OnCli
     private lateinit var classificationTimerTask: ClassificationTimerTask;
     private lateinit var bReturnToMainButton: Button;
 
+    val class_labels: Array<String> = arrayOf(
+            "Triceps-Curls",
+            "Russian-Twist",
+            "Bizeps-Curls",
+            "Crunches"
+    )
     /* ========== Sensor-data arrays ========== */
-    
-    val arraySize:Int = 1000
-    val gyroSensorArray1 = arrayOf(
-            Array<Float>(size=arraySize, init={-1.0F}),
-            Array<Float>(size=arraySize, init={0.0F}),
-            Array<Float>(size=arraySize, init={0.0F}),
-            Array<Float>(size=arraySize, init={0.0F})
+
+    // Assuming sensor events every 150ms, an sensor-array of length 70 should be long engough
+    // to hold the desired timeframe of 10s. To have enough bachup, an array-length of 100 is
+    // chosen.
+    val arraySize:Int = 100
+    val gyroSensorArray = arrayOf(
+            Array<Double>(size=arraySize, init={-1.0}),
+            Array<Double>(size=arraySize, init={0.0}),
+            Array<Double>(size=arraySize, init={0.0}),
+            Array<Double>(size=arraySize, init={0.0})
     );
 
-    val accelSensorArray1 = arrayOf(
-            Array<Float>(size=arraySize, init={-1.0F}),
-            Array<Float>(size=arraySize, init={0.0F}),
-            Array<Float>(size=arraySize, init={0.0F}),
-            Array<Float>(size=arraySize, init={0.0F})
+    val accelSensorArray = arrayOf(
+            Array<Double>(size=arraySize, init={-1.0}),
+            Array<Double>(size=arraySize, init={0.0}),
+            Array<Double>(size=arraySize, init={0.0}),
+            Array<Double>(size=arraySize, init={0.0})
     );
 
-    val gyroSensorArray2 = arrayOf(
-            Array<Float>(size=arraySize, init={-1.0F}),
-            Array<Float>(size=arraySize, init={0.0F}),
-            Array<Float>(size=arraySize, init={0.0F}),
-            Array<Float>(size=arraySize, init={0.0F})
-    );
-
-    val accelSensorArray2 = arrayOf(
-            Array<Float>(size=arraySize, init={-1.0F}),
-            Array<Float>(size=arraySize, init={0.0F}),
-            Array<Float>(size=arraySize, init={0.0F}),
-            Array<Float>(size=arraySize, init={0.0F})
-    );
-
-    private val writeDataLock = ReentrantLock()
+    val writeDataLock = ReentrantLock()
     // The single buffer-operations like switchBufferSet() or cleanInactiveBufferSet()
     // are used prevent race-conditions between them.
     private val bufferOperationLock = ReentrantLock()
-    private var gyroDataCounter1: Int = 0;
-    private var gyroDataCounter2: Int = 0;
-    private var accelDataCounter1: Int = 0;
-    private var accelDataCounter2: Int = 0;
-    private var activeBuffer : Int = 0;
+    private var gyroDataCounter: Int = 0;
+    private var accelDataCounter: Int = 0;
 
     lateinit var referenceDataFile : String;
     var testsetDirectory: String = "";
@@ -90,7 +82,7 @@ class ActivityRecognition : AppCompatActivity(), SensorEventListener, View.OnCli
         // Comment the line below for regular operation. If uncommented,
         // the application loads a defined test-set and starts the classification
         // on the test-data.
-        testsetDirectory = "${filesDir}/test_set"
+        //testsetDirectory = "${filesDir}/test_set"
 
         bReturnToMainButton = findViewById(R.id.button_activity_return);
         bReturnToMainButton.setOnClickListener(this)
@@ -138,61 +130,30 @@ class ActivityRecognition : AppCompatActivity(), SensorEventListener, View.OnCli
         val sensorType: Int = event.sensor.type;
 
         if (sensorType == Sensor.TYPE_GYROSCOPE) {
-            val gyroX : Float = event.values[0];
-            val gyroY : Float = event.values[1];
-            val gyroZ : Float = event.values[2];
+            val gyroX : Double = event.values[0].toDouble();
+            val gyroY : Double = event.values[1].toDouble();
+            val gyroZ : Double = event.values[2].toDouble();
             // Get the timestamp in seconds
-            val time: Float = event.timestamp.toFloat() * 1e-9F;
+            val time: Double = event.timestamp.toDouble() * 1e-9F;
 
             writeDataLock.lock()
             try {
+                pushSensorValuesToBuffer(gyroSensorArray, arrayOf(time, gyroX, gyroY, gyroZ))
 
-                if (activeBuffer == 1 && gyroDataCounter1 < gyroSensorArray1[0].size) {
-                    gyroSensorArray1[0][gyroDataCounter1] = time
-                    gyroSensorArray1[1][gyroDataCounter1] = gyroX
-                    gyroSensorArray1[2][gyroDataCounter1] = gyroY
-                    gyroSensorArray1[3][gyroDataCounter1] = gyroZ
-
-                    gyroDataCounter1++;
-
-                } else if (gyroDataCounter2 < gyroSensorArray2[0].size) {
-                    gyroSensorArray2[0][gyroDataCounter2] = time
-                    gyroSensorArray2[1][gyroDataCounter2] = gyroX
-                    gyroSensorArray2[2][gyroDataCounter2] = gyroY
-                    gyroSensorArray2[3][gyroDataCounter2] = gyroZ
-
-                    gyroDataCounter2++;
-                }
             } finally {
                 writeDataLock.unlock()
             }
 
         } else if (sensorType == Sensor.TYPE_ACCELEROMETER) {
-            val accelX : Float = event.values[0];
-            val accelY : Float = event.values[1];
-            val accelZ : Float = event.values[2];
+            val accelX: Double = event.values[0].toDouble();
+            val accelY: Double = event.values[1].toDouble();
+            val accelZ: Double = event.values[2].toDouble();
             // Get the timestamp in seconds
-            val time: Float = event.timestamp.toFloat() * 1e-9F;
+            val time: Double = event.timestamp.toDouble() * 1e-9F;
 
             writeDataLock.lock()
             try {
-
-                if (activeBuffer == 1 && accelDataCounter1 < accelSensorArray1[0].size) {
-                    accelSensorArray1[0][accelDataCounter1] = time
-                    accelSensorArray1[1][accelDataCounter1] = accelX
-                    accelSensorArray1[2][accelDataCounter1] = accelY
-                    accelSensorArray1[3][accelDataCounter1] = accelZ
-
-                    accelDataCounter1++;
-
-                } else if (accelDataCounter2 < accelSensorArray2[0].size) {
-                    accelSensorArray2[0][accelDataCounter2] = time
-                    accelSensorArray2[1][accelDataCounter2] = accelX
-                    accelSensorArray2[2][accelDataCounter2] = accelY
-                    accelSensorArray2[3][accelDataCounter2] = accelZ
-
-                    accelDataCounter2++;
-                }
+                pushSensorValuesToBuffer(accelSensorArray, arrayOf(time, accelX, accelY, accelZ))
             } finally {
                 writeDataLock.unlock()
             }
@@ -203,110 +164,26 @@ class ActivityRecognition : AppCompatActivity(), SensorEventListener, View.OnCli
         // Mandatory implementation by child-class of SensorEventListener()
     }
 
-    fun switchBufferSet() {
-        /* Attention: This function DOES NOT clean up the buffer or reset the index-counters. Use
-        cleanUpInactiveBufferSet() for this purpose. */
+    private fun shiftRightBufferEntries(buffer: Array<Array<Double>>) {
+        val N_columns: Int = buffer.size
+        val N_entries: Int = buffer[0].size
 
-        // Block any concurrent buffer-operations. (Capturing sensor-data is still enabled.)
-        bufferOperationLock.lock();
-
-        //Block sensor-data capturing
-        writeDataLock.lock();
-
-        // Now, switch to the inactive buffer set.
-        try {
-            if (activeBuffer == 0) {
-                activeBuffer = 1;
-            } else {
-                activeBuffer = 0;
+        for (k in N_entries - 1 downTo 1) {
+            for (l in 0 until N_columns) {
+                buffer[l][k] = buffer[l][k - 1]
             }
-        } finally {
-            // Re-enable data capturing.
-            writeDataLock.unlock();
+        }
 
-            // Release lock for concurrent buffer operations.
-            bufferOperationLock.unlock();
+        for (l in 0 until N_columns) {
+            buffer[l][0] = Double.NaN
         }
     }
 
-    fun getActiveBufferSet() : Array<Array<Array<Float>>> {
-        writeDataLock.lock()
-        bufferOperationLock.lock()
-
-        // As Kotlin currently does not any easy to use deep-copy mechanism,
-        // one has to use the rather complicated implementation below.
-        val res : Array<Array<Array<Float>>> = arrayOf(
-                arrayOf(Array(arraySize, {0.0F}),
-                        Array(arraySize, {0.0F}),
-                        Array(arraySize, {0.0F}),
-                        Array(arraySize, {0.0F})),
-                arrayOf(Array(arraySize, {0.0F}),
-                        Array(arraySize, {0.0F}),
-                        Array(arraySize, {0.0F}),
-                        Array(arraySize, {0.0F}))
-        )
-
-        try {
-            if (activeBuffer == 0) {
-                arrayOf(gyroSensorArray1, accelSensorArray1).copyInto(res)
-            } else {
-                arrayOf(gyroSensorArray2, accelSensorArray2).copyInto(res)
-            }
-        } finally {
-            bufferOperationLock.unlock()
-            writeDataLock.unlock()
+    private fun pushSensorValuesToBuffer(buffer: Array<Array<Double>>, values: Array<Double>) {
+        shiftRightBufferEntries(buffer)
+        for (k in 0 until values.size) {
+            buffer[k][0] = values[k];
         }
-
-        return res
-    }
-
-    fun getInactiveBufferSet() : List<Array<Array<Float>>> {
-
-        // Block any concurrent buffer-operations.
-        bufferOperationLock.lock()
-
-        val res: List<Array<Array<Float>>>;
-        try {
-            if (activeBuffer == 0) {
-                 res = listOf(gyroSensorArray2, accelSensorArray2)
-            } else {
-                res = listOf(gyroSensorArray1, accelSensorArray1)
-            }
-        } finally {
-            bufferOperationLock.unlock()
-        }
-
-        return res
-    }
-    
-    fun cleanInactiveBufferSet() {
-        // Block any concurrent buffer-operations. (Data-capturing is still enabled.)
-        bufferOperationLock.lock()
-
-        try {
-            // As bufferOperationLock is locked, one can safely query activeBuffer.
-            if (activeBuffer == 1) {
-                cleanBuffer(gyroSensorArray1);
-                cleanBuffer(accelSensorArray1);
-                gyroDataCounter1 = 0;
-                accelDataCounter1 = 0;
-            } else {
-                cleanBuffer(gyroSensorArray2);
-                cleanBuffer(accelSensorArray2);
-                gyroDataCounter2 = 0;
-                accelDataCounter2 = 0;
-            }
-        } finally {
-            bufferOperationLock.lock()
-        }
-    }
-    
-    private fun cleanBuffer(buffer: Array<Array<Float>>) {
-        buffer[0].fill(element=-1.0F)
-        buffer[1].fill(element=0.0F)
-        buffer[2].fill(element=0.0F)
-        buffer[3].fill(element=0.0F)
-        
     }
 
     override fun onClick(v: View?) {
@@ -327,8 +204,8 @@ class ClassificationThread
     val synchronizationLock = ReentrantLock()
     val synchronizationCondition = synchronizationLock.newCondition()
 
-    private lateinit var gyroTestData: List<Array<Array<Float>>>;
-    private lateinit var accelTestData: List<Array<Array<Float>>>;
+    private lateinit var gyroTestData: List<Array<Array<Double>>>;
+    private lateinit var accelTestData: List<Array<Array<Double>>>;
     private lateinit var testClasses: List<Int>;
     private var useTestData: Boolean = false;
     private var testsetSize: Int = -1;
@@ -336,21 +213,21 @@ class ClassificationThread
 
     // Set this to true to terminate the thread.
     var terminateThread: Boolean = false;
-
-    private val sampling_frequency: Float = 100.0F;
-
-    // ToDo: Replace space-holder neighbors with real ones
-    private lateinit var neighbors: Array<Array<Float>>;
-
+    private val sampling_frequency: Double = 100.0;
+    private lateinit var neighbors: Array<Array<Double>>;
     private lateinit var neighbor_classes: Array<Int>;
 
     override fun run() {
 
+        // Load the reference-data for kNN
         val reader = ReferenceDataCsvReader()
-        val ret_vals:Pair<Array<Array<Float>>, Array<Int>> = reader.read(activityThread.referenceDataFile)
+        val ret_vals:Pair<Array<Array<Double>>, Array<Int>> = reader.read(activityThread.referenceDataFile)
         neighbors = ret_vals.first;
         neighbor_classes = ret_vals.second;
 
+        // Is the testsetDirectory-member in the Activity is not empty, iteratively apply the
+        // pre-captured test-signals to the classification-algorithm instead of using the
+        // sensor-data buffers.
         if (activityThread.testsetDirectory.isNotEmpty()) {
             val testSetLoader : TestSetLoader = TestSetLoader()
             val (tmp1, tmp2, tmp3) =
@@ -363,7 +240,8 @@ class ClassificationThread
             useTestData = true;
             testsetSize = gyroTestData.size;
             currentTestIndex = 0;
-
+        } else {
+            useTestData = false;
         }
 
 
@@ -375,33 +253,51 @@ class ClassificationThread
             synchronizationCondition.await()
 
             if (useTestData) {
-                val activity = doComputation(gyroTestData[currentTestIndex],
-                        accelTestData[currentTestIndex])
+
+                val reversedGyroTestData = arrayOf(
+                        gyroTestData[currentTestIndex][0].reversedArray(),
+                        gyroTestData[currentTestIndex][1].reversedArray(),
+                        gyroTestData[currentTestIndex][2].reversedArray(),
+                        gyroTestData[currentTestIndex][3].reversedArray()
+                )
+
+                val reversedAccelerometerTestData = arrayOf(
+                        accelTestData[currentTestIndex][0].reversedArray(),
+                        accelTestData[currentTestIndex][1].reversedArray(),
+                        accelTestData[currentTestIndex][2].reversedArray(),
+                        accelTestData[currentTestIndex][3].reversedArray()
+                )
+                val activity = doComputation(reversedGyroTestData,
+                        reversedAccelerometerTestData)
                 val expected_activity = testClasses[currentTestIndex];
 
                 println("Idx: ${currentTestIndex}\tExpected: ${expected_activity}\tCalculated: ${activity}")
                 currentTestIndex = (currentTestIndex + 1) % testsetSize;
 
             } else {
-
-                // Switch to the inactive buffer for storing the sensor-data.
-                activityThread.switchBufferSet()
-
-                // Get the new inactive buffer-set for processing.
-                val sensorData = activityThread.getInactiveBufferSet()
+                var gyroSensorData: Array<Array<Double>>;
+                var accelSensorData: Array<Array<Double>>;
+                
+                activityThread.writeDataLock.lock()
+                try {
+                     gyroSensorData = deepcopySensorDataBuffer(activityThread.gyroSensorArray);
+                     accelSensorData = deepcopySensorDataBuffer(activityThread.accelSensorArray);
+                } finally {
+                    activityThread.writeDataLock.unlock()
+                }
 
                 // Do the computation
-                val activity = doComputation(sensorData[0], sensorData[1])
-
-                // Clean-up the currently inactive buffer to be ready for filling after the next
-                // timer-event.
-                activityThread.cleanInactiveBufferSet()
+                val activity = doComputation(gyroSensorData, accelSensorData)
+                // <activity> < 0 in case of too less sensor-data (e.g. right after starting the app)
+                if (activity >= 0) {
+                    print("Detected Activity: ${activityThread.class_labels[activity]}.\n")
+                }
             }
         }
     }
 
-    private fun doComputation(gyroSensorData: Array<Array<Float>>,
-                              accelSensorData: Array<Array<Float>>): Int {
+    private fun doComputation(gyroSensorData: Array<Array<Double>>,
+                              accelSensorData: Array<Array<Double>>): Int {
 
         val clippedData = clipData(gyroSensorData, accelSensorData);
         val N_samples_gyro = clippedData[0][0].size
@@ -418,8 +314,8 @@ class ClassificationThread
         return res
     }
 
-    private fun doResampling(gyroSensorData: Array<Array<Float>>,
-                             accelSensorData: Array<Array<Float>>): Array<Array<Array<Float>>> {
+    private fun doResampling(gyroSensorData: Array<Array<Double>>,
+                             accelSensorData: Array<Array<Double>>): Array<Array<Array<Double>>> {
 
         val gyroSensorDataResampled = resampleTimeSeries(gyroSensorData)
         val accelSensorDataResampled = resampleTimeSeries(accelSensorData)
@@ -428,8 +324,8 @@ class ClassificationThread
     }
 
     private fun clipData(
-            gyroSensorData: Array<Array<Float>>,
-            accelSensorData: Array<Array<Float>>): Array<Array<Array<Float>>> {
+            gyroSensorData: Array<Array<Double>>,
+            accelSensorData: Array<Array<Double>>): Array<Array<Array<Double>>> {
         val clippedGyroData = clipDataSeries(gyroSensorData);
         val clippedAccelData = clipDataSeries(accelSensorData);
 
@@ -438,44 +334,43 @@ class ClassificationThread
                 clippedAccelData)
     }
 
-    private fun clipDataSeries(dataArray: Array<Array<Float>>): Array<Array<Float>> {
-        var idx_end: Int = -1;
-        val t0 = dataArray[0][0];
+    private fun clipDataSeries(dataArray: Array<Array<Double>>): Array<Array<Double>> {
+        val tmax = dataArray[0][0];
+        var t0_idx = -1;
 
-        for (k in 0 until dataArray[0].size - 1) {
+        val N_samples = dataArray[0].size
 
-            // Clip data at a 10 seconds time-frame
-            if (dataArray[0][k] - t0 >= 1000.0) {
-                idx_end = k;
+        for (k in 0 until N_samples) {
+            if (dataArray[0][k] < 0.0F){
+                t0_idx = k - 1;
                 break;
-            // OR use all samples if the dataset contains less than 10 seconds.
-            } else if (dataArray[0][k] < 0) {
-                idx_end = k-1
+            }  else if (tmax - dataArray[0][k] >= 5) {
+                t0_idx = k;
                 break;
             }
         }
 
-        if (idx_end == -1) {
-            idx_end = dataArray[0].size - 1
+        if (t0_idx == -1) {
+            t0_idx = N_samples - 1;
         }
 
         return arrayOf(
-                dataArray[0].sliceArray(0..idx_end),
-                dataArray[1].sliceArray(0..idx_end),
-                dataArray[2].sliceArray(0..idx_end),
-                dataArray[3].sliceArray(0..idx_end)
+                dataArray[0].slice(t0_idx downTo 0).toTypedArray(),
+                dataArray[1].slice(t0_idx downTo 0).toTypedArray(),
+                dataArray[2].slice(t0_idx downTo 0).toTypedArray(),
+                dataArray[3].slice(t0_idx downTo 0).toTypedArray(),
         )
     }
 
-    private fun resampleTimeSeries(dataArray: Array<Array<Float>>): Array<Array<Float>> {
+    private fun resampleTimeSeries(dataArray: Array<Array<Double>>): Array<Array<Double>> {
         val t_old = dataArray[0]
         val t0 = t_old[0]
         val t_new = t_old.map { tk -> tk - t0 };
 
         val N_samples: Int = (t_new[t_new.size - 1]* sampling_frequency).toInt();
-        val x1 = Array<Float>(size=N_samples, init={0.0F});
-        val x2 = Array<Float>(size=N_samples, init={0.0F});
-        val x3 = Array<Float>(size=N_samples, init={0.0F});
+        val x1 = Array<Double>(size=N_samples, init={0.0});
+        val x2 = Array<Double>(size=N_samples, init={0.0});
+        val x3 = Array<Double>(size=N_samples, init={0.0});
 
         var i: Int = 0;
 
@@ -514,8 +409,8 @@ class ClassificationThread
     }
 
 
-    private fun removeOffsets(gyroSensorData: Array<Array<Float>>,
-                              accelSensorData: Array<Array<Float>>): Array<Array<Array<Float>>> {
+    private fun removeOffsets(gyroSensorData: Array<Array<Double>>,
+                              accelSensorData: Array<Array<Double>>): Array<Array<Array<Double>>> {
 
         val gyroDataWithoutOffset = removeOffset(gyroSensorData)
         val accelDataWithoutOffset = removeOffset(accelSensorData)
@@ -523,34 +418,34 @@ class ClassificationThread
         return arrayOf(gyroDataWithoutOffset, accelDataWithoutOffset)
     }
 
-    private fun removeOffset(dataArray: Array<Array<Float>>): Array<Array<Float>> {
+    private fun removeOffset(dataArray: Array<Array<Double>>): Array<Array<Double>> {
 
         val offset1 = dataArray[0].average();
         val offset2 = dataArray[1].average();
         val offset3 = dataArray[2].average();
 
         return arrayOf(
-                dataArray[0].map { x -> (x - offset1).toFloat() }.toTypedArray(),
-                dataArray[1].map { x -> (x - offset2).toFloat() }.toTypedArray(),
-                dataArray[2].map { x -> (x - offset3).toFloat() }.toTypedArray()
+                dataArray[0].map { x -> (x - offset1).toDouble() }.toTypedArray(),
+                dataArray[1].map { x -> (x - offset2).toDouble() }.toTypedArray(),
+                dataArray[2].map { x -> (x - offset3).toDouble() }.toTypedArray()
         )
     }
 
-    private fun calcEnergies(gyroSensorData: Array<Array<Float>>,
-                             accelSensorData: Array<Array<Float>>): Array<Array<Float>> {
+    private fun calcEnergies(gyroSensorData: Array<Array<Double>>,
+                             accelSensorData: Array<Array<Double>>): Array<Array<Double>> {
 
-        val gyroSensorEnergies: Array<Float> = calcEnergy(gyroSensorData);
-        val accelSensorEnergies: Array<Float> = calcEnergy(accelSensorData);
+        val gyroSensorEnergies: Array<Double> = calcEnergy(gyroSensorData);
+        val accelSensorEnergies: Array<Double> = calcEnergy(accelSensorData);
 
         return arrayOf(gyroSensorEnergies, accelSensorEnergies)
     }
 
-    private fun calcEnergy(dataArray: Array<Array<Float>>): Array<Float> {
+    private fun calcEnergy(dataArray: Array<Array<Double>>): Array<Double> {
         val N_samples = dataArray[0].size;
 
-        val x1_squared: Array<Float> = dataArray[0].map { x -> x * x / N_samples }.toTypedArray();
-        val x2_squared: Array<Float> = dataArray[1].map { x -> x * x / N_samples}.toTypedArray();
-        val x3_squared: Array<Float> = dataArray[2].map { x -> x * x / N_samples}.toTypedArray();
+        val x1_squared: Array<Double> = dataArray[0].map { x -> x * x / N_samples }.toTypedArray();
+        val x2_squared: Array<Double> = dataArray[1].map { x -> x * x / N_samples}.toTypedArray();
+        val x3_squared: Array<Double> = dataArray[2].map { x -> x * x / N_samples}.toTypedArray();
 
         return arrayOf(
                 x1_squared.sum(),
@@ -559,8 +454,8 @@ class ClassificationThread
         )
     }
 
-    private fun doClassification(gyroEnergies: Array<Float>, accelEnergies: Array<Float>): Int {
-        val energy_vector: Array<Float> = arrayOf(
+    private fun doClassification(gyroEnergies: Array<Double>, accelEnergies: Array<Double>): Int {
+        val energy_vector: Array<Double> = arrayOf(
                 gyroEnergies[0],
                 gyroEnergies[1],
                 gyroEnergies[2],
@@ -569,8 +464,10 @@ class ClassificationThread
                 accelEnergies[2]
         );
 
+        //print("Gyro-X: ${gyroEnergies[0]}, Gyro-Y: ${gyroEnergies[1]}, Gyro-Z: ${gyroEnergies[2]}, Accel-X: ${gyroEnergies[0]}, Accel-Y: ${gyroEnergies[1]}, Accel-Z: ${gyroEnergies[2]}\n")
+
         // Calculate euclidean distances to reference individuals.
-        val euclideanDistances = Array<Float>(size=neighbors.size, init={0.0F});
+        val euclideanDistances = Array<Double>(size=neighbors.size, init={0.0});
         for (k: Int in 0 until neighbors.size) {
             euclideanDistances[k] = euclideanDistance(energy_vector, neighbors[k]);
         }
@@ -598,11 +495,12 @@ class ClassificationThread
                 _class = l;
             }
         }
+
         return _class
     }
 
-    private fun euclideanDistance(v1: Array<Float>, v2: Array<Float>): Float {
-        val diff = Array<Float>(size = v1.size, init={0.0F});
+    private fun euclideanDistance(v1: Array<Double>, v2: Array<Double>): Double {
+        val diff = Array<Double>(size = v1.size, init={0.0});
 
         // Squared differences
         for (k: Int in 0 until v1.size) {
@@ -610,9 +508,20 @@ class ClassificationThread
         }
 
         // Square-root of sum
-        return diff.sum().pow(x = 0.5F);
+        return diff.sum().pow(x = 0.5);
     }
 
+    private fun deepcopySensorDataBuffer(buffer: Array<Array<Double>>): Array<Array<Double>> {
+
+        var arrayOut: Array<Array<Double>> = arrayOf(
+                Array<Double>(size = activityThread.arraySize, init = {idx -> buffer[0][idx]}),
+                Array<Double>(size = activityThread.arraySize, init = {idx -> buffer[1][idx]}),
+                Array<Double>(size = activityThread.arraySize, init = {idx -> buffer[2][idx]}),
+                Array<Double>(size = activityThread.arraySize, init = {idx -> buffer[3][idx]})
+        )
+
+        return arrayOut
+    }
 }
 
 class ClassificationTimerTask
@@ -631,9 +540,9 @@ class ClassificationTimerTask
 
 class ReferenceDataCsvReader {
 
-    fun read(file:String) : Pair<Array<Array<Float>>, Array<Int>> {
+    fun read(file:String) : Pair<Array<Array<Double>>, Array<Int>> {
 
-        val referenceData = mutableListOf<Array<Float>>();
+        val referenceData = mutableListOf<Array<Double>>();
         val referenceClasses = mutableListOf<Int>();
 
         val file_ = File(file);
@@ -641,13 +550,13 @@ class ReferenceDataCsvReader {
         var line: String? = reader.readLine();
         while (line != null) {
             val tokens = line.split(";")
-            val tmp = arrayOf<Float>(
-                    tokens[1].toFloat(), // Gyro x
-                    tokens[2].toFloat(), // Gyro y
-                    tokens[3].toFloat(), // Gyro z
-                    tokens[4].toFloat(), // Accelerometer x
-                    tokens[5].toFloat(), // Accelerometer y
-                    tokens[6].toFloat(), // Accelerometer z
+            val tmp = arrayOf<Double>(
+                    tokens[1].toDouble(), // Gyro x
+                    tokens[2].toDouble(), // Gyro y
+                    tokens[3].toDouble(), // Gyro z
+                    tokens[4].toDouble(), // Accelerometer x
+                    tokens[5].toDouble(), // Accelerometer y
+                    tokens[6].toDouble(), // Accelerometer z
             )
             referenceData.add(element = tmp);
             referenceClasses.add(element = tokens[7].toInt());
@@ -667,7 +576,7 @@ class TestSetLoader {
     // The activity-classes corresponding to the upper subdirectories.
     private val actitityClasses = arrayOf<Int>(0,1,2,3)
 
-    fun load(testsetDirectory: String): Triple<List<Array<Array<Float>>>, List<Array<Array<Float>>>, List<Int>> {
+    fun load(testsetDirectory: String): Triple<List<Array<Array<Double>>>, List<Array<Array<Double>>>, List<Int>> {
         /* The test-set consists of CSV-files for each activity, with two files per activity. (One
         for the gyro-sensor and one for the accelerometer.)
 
@@ -678,8 +587,8 @@ class TestSetLoader {
 
          */
 
-        val gyroData: MutableList<Array<Array<Float>>> = mutableListOf();
-        val accelData: MutableList<Array<Array<Float>>> = mutableListOf();
+        val gyroData: MutableList<Array<Array<Double>>> = mutableListOf();
+        val accelData: MutableList<Array<Array<Double>>> = mutableListOf();
         val activityClassPerFilePair: MutableList<Int> = mutableListOf();
 
         val gyroRegexPattern: Pattern = Pattern.compile(".*_gyro_.*\\.csv");
@@ -705,24 +614,24 @@ class TestSetLoader {
             }
         }
 
-        return Triple<List<Array<Array<Float>>>, List<Array<Array<Float>>>, List<Int>> (gyroData, accelData, activityClassPerFilePair)
+        return Triple<List<Array<Array<Double>>>, List<Array<Array<Double>>>, List<Int>> (gyroData, accelData, activityClassPerFilePair)
     }
 
 
-    private fun readCSVSensorDataFile(file:String): Array<Array<Float>> {
+    private fun readCSVSensorDataFile(file:String): Array<Array<Double>> {
 
-        val data: MutableList<Array<Float>> = mutableListOf();
+        val data: MutableList<Array<Double>> = mutableListOf();
 
         val reader: BufferedReader = File(file).bufferedReader()
         var line: String? = reader.readLine();
         while (line != null) {
             val tokens = line.split(";")
             try {
-                val tmp = arrayOf<Float>(
-                        tokens[0].toFloat(), // Time
-                        tokens[1].toFloat(), // Data x
-                        tokens[2].toFloat(), // Data y
-                        tokens[3].toFloat()  // Data z
+                val tmp = arrayOf<Double>(
+                        tokens[0].toDouble(), // Time
+                        tokens[1].toDouble(), // Data x
+                        tokens[2].toDouble(), // Data y
+                        tokens[3].toDouble()  // Data z
                 )
                 data.add(element = tmp);
 
@@ -734,11 +643,11 @@ class TestSetLoader {
         reader.close()
 
         val N_samples = data.size
-        val dataArray: Array<Array<Float>> = arrayOf(
-                Array<Float>(N_samples, init = {0.0F}),
-                Array<Float>(N_samples, init = {0.0F}),
-                Array<Float>(N_samples, init = {0.0F}),
-                Array<Float>(N_samples, init = {0.0F})
+        val dataArray: Array<Array<Double>> = arrayOf(
+                Array<Double>(N_samples, init = {0.0}),
+                Array<Double>(N_samples, init = {0.0}),
+                Array<Double>(N_samples, init = {0.0}),
+                Array<Double>(N_samples, init = {0.0})
         )
 
         // Convert from row-indices first to column-indices first, to match the required data-format
