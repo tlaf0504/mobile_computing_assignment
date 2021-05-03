@@ -7,6 +7,9 @@ import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.os.Message
 import android.service.autofill.FieldClassification
 import kotlinx.coroutines.*
 import java.util.*
@@ -14,6 +17,7 @@ import java.lang.Thread
 import android.util.Log
 import android.view.View
 import android.widget.Button
+import android.widget.TextView
 import java.io.*
 import java.lang.NumberFormatException
 import java.nio.file.Path
@@ -38,9 +42,16 @@ class ActivityRecognition : AppCompatActivity(), SensorEventListener, View.OnCli
     val class_labels: Array<String> = arrayOf(
             "Triceps-Curls",
             "Russian-Twist",
-            "Bizeps-Curls",
+            "Biceps-Curls",
             "Crunches"
     )
+
+    private lateinit var tricepsActivityTextView: TextView;
+    private lateinit var bicepsActivityTextView: TextView;
+    private lateinit var crunchesActivityTextView: TextView;
+    private lateinit var russianTwistActivityTextView: TextView;
+
+
     /* ========== Sensor-data arrays ========== */
 
     // Assuming sensor events every 150ms, an sensor-array of length 70 should be long engough
@@ -71,10 +82,21 @@ class ActivityRecognition : AppCompatActivity(), SensorEventListener, View.OnCli
     lateinit var referenceDataFile : String;
     var testsetDirectory: String = "";
 
+    lateinit var probabilityUpdateHandler:  Handler;
+
+
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_recognition)
+
+        tricepsActivityTextView = findViewById(R.id.triceps_probability)
+        bicepsActivityTextView = findViewById(R.id.biceps_probability)
+        crunchesActivityTextView = findViewById(R.id.crunches_probability)
+        russianTwistActivityTextView = findViewById(R.id.russian_twist_probability)
+
+        probabilityUpdateHandler = Handler(mainLooper, Handler.Callback { msg -> probabilityUpdateHandlerCallback(msg) })
 
 
         referenceDataFile = "${filesDir}/reference/reference_data.csv";
@@ -186,6 +208,18 @@ class ActivityRecognition : AppCompatActivity(), SensorEventListener, View.OnCli
         }
     }
 
+    fun probabilityUpdateHandlerCallback(msg: Message):Boolean {
+        setActivityProbabilities(msg.obj as Array<Double>)
+        return true
+    }
+
+    fun setActivityProbabilities(values:Array<Double>) {
+        tricepsActivityTextView.text = resources.getString(R.string.triceps_percentage, values[0])
+        russianTwistActivityTextView.text = resources.getString(R.string.russian_twist_percentage, values[1])
+        bicepsActivityTextView.text = resources.getString(R.string.biceps_percentage, values[2])
+        crunchesActivityTextView.text = resources.getString(R.string.crunches_percentage, values[3])
+    }
+
     override fun onClick(v: View?) {
         if (v?.id == this.bReturnToMainButton.id) {
             val intent = Intent(this, MainActivity::class.java);
@@ -287,17 +321,21 @@ class ClassificationThread
                 }
 
                 // Do the computation
-                val activity = doComputation(gyroSensorData, accelSensorData)
+                val (activity, probabilities) = doComputation(gyroSensorData, accelSensorData)
                 // <activity> < 0 in case of too less sensor-data (e.g. right after starting the app)
                 if (activity >= 0) {
                     print("Detected Activity: ${activityThread.class_labels[activity]}.\n")
+
+                    val msg = Message()
+                    msg.obj = probabilities
+                    activityThread.probabilityUpdateHandler.sendMessage(msg)
                 }
             }
         }
     }
 
     private fun doComputation(gyroSensorData: Array<Array<Double>>,
-                              accelSensorData: Array<Array<Double>>): Int {
+                              accelSensorData: Array<Array<Double>>): Pair<Int,Array<Double>> {
 
         val clippedData = clipData(gyroSensorData, accelSensorData);
         val N_samples_gyro = clippedData[0][0].size
@@ -305,13 +343,12 @@ class ClassificationThread
 
         // Too less sampled to provice proper classification
         if (N_samples_gyro < 10 || N_samples_accel < 10) {
-            return -1
+            return Pair(-1, arrayOf(0.0, 0.0, 0.0, 0.0))
         }
         val resampledSensorData = doResampling(clippedData[0], clippedData[1])
         val sensorDataWithoutOffset = removeOffsets(resampledSensorData[0], resampledSensorData[1])
         val energies = calcEnergies(sensorDataWithoutOffset[0], sensorDataWithoutOffset[1])
-        val res = doClassification(energies[0], energies[1])
-        return res
+        return doClassification(energies[0], energies[1])
     }
 
     private fun doResampling(gyroSensorData: Array<Array<Double>>,
@@ -454,7 +491,7 @@ class ClassificationThread
         )
     }
 
-    private fun doClassification(gyroEnergies: Array<Double>, accelEnergies: Array<Double>): Int {
+    private fun doClassification(gyroEnergies: Array<Double>, accelEnergies: Array<Double>): Pair<Int,Array<Double>> {
         val energy_vector: Array<Double> = arrayOf(
                 gyroEnergies[0],
                 gyroEnergies[1],
@@ -479,8 +516,10 @@ class ClassificationThread
         return kMajorityVoting(classes_of_nearest_neighbors, 3)
     }
 
-    private fun kMajorityVoting(sortedClassesOfNearestNeighbors: Array<Int>, k:Int):Int {
+    private fun kMajorityVoting(sortedClassesOfNearestNeighbors: Array<Int>, k:Int): Pair<Int,Array<Double>> {
+        // Classes have IDs from 0 to maxClass
         val maxClass: Int = (sortedClassesOfNearestNeighbors.maxOrNull()?: 0) + 1
+
         val classCounters = Array<Int>(size = maxClass, init = {0})
 
         for (l in 0 until k) {
@@ -496,7 +535,12 @@ class ClassificationThread
             }
         }
 
-        return _class
+        // Calculate the probabilities for the current individual to belong to one of the single
+        // reference-classes
+        val neighborhood_probabilities =
+                Array<Double>(size = classCounters.size, init = {idx -> classCounters[idx].toDouble() / k})
+
+        return Pair(_class, neighborhood_probabilities)
     }
 
     private fun euclideanDistance(v1: Array<Double>, v2: Array<Double>): Double {

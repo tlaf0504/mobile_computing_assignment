@@ -7,10 +7,10 @@
     <string name="accelerometer_label_y">Accelerometer y: %1$.2f</string>
     <string name="accelerometer_label_z">Accelerometer z: %1$.2f</string>
     <string name="error_no_sensor">No Sensor</string>
-    <string name="activty_1_percentage">%2.2f\%</string>
-    <string name="activty_2_percentage">%2.2f\%</string>
-    <string name="activty_3_percentage">%2.2f\%</string>
-    <string name="activty_4_percentage">%2.2f\%</string>
+    <string name="triceps_percentage">%1$.2f</string>
+    <string name="biceps_percentage">%1$.2f</string>
+    <string name="russian_twist_percentage">%1$.2f</string>
+    <string name="crunches_percentage">%1$.2f</string>
 
     <string-array name="activity_selection_spinner_entries">
         <item>Push-Ups</item>

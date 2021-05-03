@@ -36,9 +36,10 @@
             android:layout_weight="40">
 
             <TextView
+                android:id="@+id/triceps_probability"
                 android:layout_height="wrap_content"
                 android:layout_column="1"
-                android:text="@string/activty_1_percentage"
+                android:text="@string/triceps_percentage"
                 android:layout_gravity="center_vertical"
                 android:gravity="right"
                 android:layout_weight="50"
@@ -65,9 +66,10 @@
                 android:background="@drawable/border"/>
 
             <TextView
+                android:id="@+id/biceps_probability"
                 android:layout_height="wrap_content"
                 android:layout_column="5"
-                android:text="@string/activty_3_percentage"
+                android:text="@string/biceps_percentage"
                 android:layout_gravity="center_vertical"
                 android:layout_weight="50"
                 />
@@ -79,9 +81,10 @@
             android:layout_weight="40">
 
             <TextView
+                android:id="@+id/russian_twist_probability"
                 android:layout_height="wrap_content"
                 android:layout_column="1"
-                android:text="@string/activty_2_percentage"
+                android:text="@string/russian_twist_percentage"
                 android:layout_gravity="center_vertical"
                 android:gravity="right"
                 android:layout_weight="50"
@@ -108,9 +111,10 @@
                 android:background="@drawable/border"/>
 
             <TextView
+                android:id="@+id/crunches_probability"
                 android:layout_height="wrap_content"
                 android:layout_column="5"
-                android:text="@string/activty_4_percentage"
+                android:text="@string/crunches_percentage"
                 android:layout_gravity="center_vertical"
                 android:layout_weight="50"
                 />
