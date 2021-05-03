@@ -4,6 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:layout_margin="16pt"
     tools:context=".ActivityRecognition">
 
 
@@ -16,5 +17,103 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent" />
+
+    <TableLayout
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toTopOf="@id/button_activity_return"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <TableRow
+            android:layout_height="wrap_content"
+            android:layout_weight="30" />
+
+        <TableRow
+            android:layout_height="wrap_content"
+            android:layout_width="fill_parent"
+            android:layout_weight="40">
+
+            <TextView
+                android:layout_height="wrap_content"
+                android:layout_column="1"
+                android:text="Percentage"
+                android:layout_gravity="center_vertical"
+                android:gravity="right"
+                android:layout_weight="20"
+                />
+
+            <ImageView
+                android:layout_height="match_parent"
+                android:layout_column="1"
+                android:layout_marginStart="5pt"
+                android:layout_marginEnd="10pt"
+                app:srcCompat="@android:drawable/btn_star_big_on"
+                android:layout_weight="20"/>
+
+            <ImageView
+                android:layout_height="match_parent"
+                android:layout_column="4"
+                android:layout_marginStart="10pt"
+                android:layout_marginEnd="5pt"
+                app:srcCompat="@android:drawable/btn_star_big_on"
+                android:layout_weight="20"/>
+
+            <TextView
+                android:layout_height="wrap_content"
+                android:layout_column="5"
+                android:text="Percentage"
+                android:layout_gravity="center_vertical"
+                android:layout_weight="20"
+                />
+        </TableRow>
+
+        <TableRow
+            android:layout_height="wrap_content"
+            android:layout_width="fill_parent"
+            android:layout_weight="40">
+
+            <TextView
+                android:layout_height="wrap_content"
+                android:layout_column="1"
+                android:text="Percentage"
+                android:layout_gravity="center_vertical"
+                android:gravity="right"
+                android:layout_weight="20"
+                />
+
+            <ImageView
+                android:layout_height="match_parent"
+                android:layout_column="1"
+                android:layout_marginStart="5pt"
+                android:layout_marginEnd="10pt"
+                app:srcCompat="@android:drawable/btn_star_big_on"
+                android:layout_weight="20"/>
+
+            <ImageView
+                android:layout_height="match_parent"
+                android:layout_column="4"
+                android:layout_marginStart="10pt"
+                android:layout_marginEnd="5pt"
+                app:srcCompat="@android:drawable/btn_star_big_on"
+                android:layout_weight="20"/>
+
+            <TextView
+                android:layout_height="wrap_content"
+                android:layout_column="5"
+                android:text="Percentage"
+                android:layout_gravity="center_vertical"
+                android:layout_weight="20"
+                />
+        </TableRow>
+
+        <TableRow
+            android:layout_height="wrap_content"
+            android:layout_weight="30" />
+    </TableLayout>
+
+
+
 
 </androidx.constraintlayout.widget.ConstraintLayout>
