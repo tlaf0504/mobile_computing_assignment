@@ -104,7 +104,7 @@ class ActivityRecognition : AppCompatActivity(), SensorEventListener, View.OnCli
         // Comment the line below for regular operation. If uncommented,
         // the application loads a defined test-set and starts the classification
         // on the test-data.
-        //testsetDirectory = "${filesDir}/test_set"
+        testsetDirectory = "${filesDir}/test_set"
 
         bReturnToMainButton = findViewById(R.id.button_activity_return);
         bReturnToMainButton.setOnClickListener(this)
@@ -286,32 +286,37 @@ class ClassificationThread
             synchronizationLock.lock()
             synchronizationCondition.await()
 
+            // Arrays filled with the sensor-data, either with runtime-data for testset-data
+            var gyroSensorData: Array<Array<Double>>;
+            var accelSensorData: Array<Array<Double>>;
+
+            // Only used when applying the testset-data to the classification algorithms.
+            // Contains the expected class of the test-sample.
+            var expected_activity: Int = -1;
+
+            // Use test-data as classification-input
             if (useTestData) {
 
-                val reversedGyroTestData = arrayOf(
+                gyroSensorData = arrayOf(
                         gyroTestData[currentTestIndex][0].reversedArray(),
                         gyroTestData[currentTestIndex][1].reversedArray(),
                         gyroTestData[currentTestIndex][2].reversedArray(),
                         gyroTestData[currentTestIndex][3].reversedArray()
                 )
 
-                val reversedAccelerometerTestData = arrayOf(
+                accelSensorData = arrayOf(
                         accelTestData[currentTestIndex][0].reversedArray(),
                         accelTestData[currentTestIndex][1].reversedArray(),
                         accelTestData[currentTestIndex][2].reversedArray(),
                         accelTestData[currentTestIndex][3].reversedArray()
                 )
-                val activity = doComputation(reversedGyroTestData,
-                        reversedAccelerometerTestData)
-                val expected_activity = testClasses[currentTestIndex];
 
-                println("Idx: ${currentTestIndex}\tExpected: ${expected_activity}\tCalculated: ${activity}")
-                currentTestIndex = (currentTestIndex + 1) % testsetSize;
+                expected_activity = testClasses[currentTestIndex];
 
+
+
+            // Run the classification with the actual sensor-data
             } else {
-                var gyroSensorData: Array<Array<Double>>;
-                var accelSensorData: Array<Array<Double>>;
-                
                 activityThread.writeDataLock.lock()
                 try {
                      gyroSensorData = deepcopySensorDataBuffer(activityThread.gyroSensorArray);
@@ -319,17 +324,21 @@ class ClassificationThread
                 } finally {
                     activityThread.writeDataLock.unlock()
                 }
+            }
 
-                // Do the computation
-                val (activity, probabilities) = doComputation(gyroSensorData, accelSensorData)
-                // <activity> < 0 in case of too less sensor-data (e.g. right after starting the app)
-                if (activity >= 0) {
-                    print("Detected Activity: ${activityThread.class_labels[activity]}.\n")
+            // Do the computation
+            val (activity, probabilities) = doComputation(gyroSensorData, accelSensorData)
+            // <activity> < 0 in case of too less sensor-data (e.g. right after starting the app)
+            if (activity >= 0) {
+                val msg = Message()
+                msg.obj = probabilities
+                activityThread.probabilityUpdateHandler.sendMessage(msg)
+            }
 
-                    val msg = Message()
-                    msg.obj = probabilities
-                    activityThread.probabilityUpdateHandler.sendMessage(msg)
-                }
+            // When applying the testset-data, write the result to the system-console.
+            if (useTestData) {
+                println("Idx: ${currentTestIndex}\tExpected: ${expected_activity}\tCalculated: ${activity}")
+                currentTestIndex = (currentTestIndex + 1) % testsetSize;
             }
         }
     }
