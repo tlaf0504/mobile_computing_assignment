@@ -335,7 +335,7 @@ class ClassificationThread
                 activityThread.probabilityUpdateHandler.sendMessage(msg)
             }
 
-            val (activit_TF, probabilities_TF) = doComputationTFLite(gyroSensorData, accelSensorData)
+            //val (activity, probabilities) = doComputationTFLite(gyroSensorData, accelSensorData)
 
 
 
@@ -350,13 +350,17 @@ class ClassificationThread
     private fun doComputationTFLite(gyroSensorData: Array<Array<Double>>,
                                     accelSensorData: Array<Array<Double>>): Pair<Int,Array<Double>> {
 
-        val clippedData = clipData(gyroSensorData, accelSensorData, T_lim=4.0);
-        val resampledSensorData = doResampling(clippedData[0], clippedData[1], fs=50.0)
-
-        // Too less sampled to provide proper classification
-        if (resampledSensorData[0][0].size < 200) {
+        // Too less data available
+        if (gyroSensorData[0][0] - gyroSensorData[0].last() < 4.0) {
             return Pair(-1, arrayOf(0.0, 0.0, 0.0, 0.0))
         }
+
+        val resampledSensorData = doResampling(gyroSensorData,
+            accelSensorData,
+            fs=50.0,
+            Ns=200)
+
+
 
 
 
@@ -386,8 +390,8 @@ class ClassificationThread
                              fs:Double=100.0,
                              Ns:Int = -1): Array<Array<Array<Double>>> {
 
-        val gyroSensorDataResampled = resampleTimeSeries(gyroSensorData, fs=fs)
-        val accelSensorDataResampled = resampleTimeSeries(accelSensorData, fs=fs)
+        val gyroSensorDataResampled = resampleTimeSeries(gyroSensorData, fs=fs, N_samples_out = Ns)
+        val accelSensorDataResampled = resampleTimeSeries(accelSensorData, fs=fs, N_samples_out = Ns)
 
         return arrayOf(gyroSensorDataResampled, accelSensorDataResampled)
     }
@@ -406,26 +410,43 @@ class ClassificationThread
 
     private fun clipDataSeries(dataArray: Array<Array<Double>>, T_lim:Double=10.0): Array<Array<Double>> {
         val tmax = dataArray[0][0];
-        var t0_idx = -1;
-
         val N_samples = dataArray[0].size
 
-        if (dataArray[0][0] - dataArray[0].last() < T_lim) {
-            t0_idx = dataArray[0].lastIndex;
-        } else {
-            // Search for the end of the timeframe
-            for (k in 0 until N_samples) {
-                if (tmax - dataArray[0][k] >= T_lim) {
-                    t0_idx = k;
-                    break;
-                }
+        // If the last row in the array is filled (indicated by a timestamp >= 0),
+        // AND the timeframe is shorter than the clipping-length, on can return the whole array.
+        if (dataArray[0].last() > 0 &&
+            dataArray[0][0] - dataArray[0].last() < T_lim) {
+
+            // Reverse the row-order to have the lowest time-value first.
+            return arrayOf(
+                dataArray[0].slice(dataArray[0].lastIndex downTo 0).toTypedArray(),
+                dataArray[1].slice(dataArray[0].lastIndex downTo 0).toTypedArray(),
+                dataArray[2].slice(dataArray[0].lastIndex downTo 0).toTypedArray(),
+                dataArray[3].slice(dataArray[0].lastIndex downTo 0).toTypedArray(),
+            )
+        }
+
+        // Go through the time-values and find the first one exceeding the given time-limit.
+        // If a "-1" is found beforehand, terminate the loop and return the array until the pre-last
+        // value.
+        var t0_idx = -1;
+        for (k in 0 until N_samples) {
+
+            // If a -1 is found, set the end-index to k-1
+            if (dataArray[0][k] < 0) {
+                t0_idx = k - 1;
+                break;
+            }
+
+            // If the limit-time is exceeded, use set the current row to be the last one in the
+            // returned array.
+            if (tmax - dataArray[0][k] >= T_lim) {
+                t0_idx = k;
+                break;
             }
         }
 
-        if (t0_idx == -1) {
-            t0_idx = dataArray[0].lastIndex;
-        }
-
+        // Reverse the row-order to have the lowest time-value first.
         return arrayOf(
                 dataArray[0].slice(t0_idx downTo 0).toTypedArray(),
                 dataArray[1].slice(t0_idx downTo 0).toTypedArray(),
@@ -463,16 +484,18 @@ class ClassificationThread
             }
 
             val ti = t_new[i];
-            val tip1 = t_new[i+1];
+            // Interpolate
+            val tip1 = t_new[i + 1];
 
             val x1_i = dataArray[1][i];
-            val x1_ip1 = dataArray[1][i+1];
+            val x1_ip1 = dataArray[1][i + 1];
 
             val x2_i = dataArray[2][i];
-            val x2_ip1 = dataArray[2][i+1];
+            val x2_ip1 = dataArray[2][i + 1];
 
             val x3_i = dataArray[3][i];
-            val x3_ip1 = dataArray[3][i+1];
+            val x3_ip1 = dataArray[3][i + 1];
+
 
             /* >>===== Linear interpolation for time-point tk between time-points ti and tip1 */
 
