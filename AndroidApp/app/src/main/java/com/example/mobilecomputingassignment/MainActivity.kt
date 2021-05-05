@@ -28,8 +28,8 @@ class MainActivity : AppCompatActivity(),
         this.bDataCapturing.setOnClickListener(this);
 
         // Debug-code. Move directly to activity-recognition.
-        //val intent = Intent(this, ActivityRecognition::class.java)
-        //startActivity(intent);
+        val intent = Intent(this, ActivityRecognition::class.java)
+        startActivity(intent);
 
     }
 

@@ -326,14 +326,18 @@ class ClassificationThread
                 }
             }
 
-            // Do the computation
-            val (activity, probabilities) = doComputation(gyroSensorData, accelSensorData)
+            // Do the computation with kNN classifier
+            val (activity, probabilities) = doComputationkNN(gyroSensorData, accelSensorData)
             // <activity> < 0 in case of too less sensor-data (e.g. right after starting the app)
             if (activity >= 0) {
                 val msg = Message()
                 msg.obj = probabilities
                 activityThread.probabilityUpdateHandler.sendMessage(msg)
             }
+
+            val (activit_TF, probabilities_TF) = doComputationTFLite(gyroSensorData, accelSensorData)
+
+
 
             // When applying the testset-data, write the result to the system-console.
             if (useTestData) {
@@ -343,7 +347,22 @@ class ClassificationThread
         }
     }
 
-    private fun doComputation(gyroSensorData: Array<Array<Double>>,
+    private fun doComputationTFLite(gyroSensorData: Array<Array<Double>>,
+                                    accelSensorData: Array<Array<Double>>): Pair<Int,Array<Double>> {
+
+        val clippedData = clipData(gyroSensorData, accelSensorData, T_lim=4.0);
+        val resampledSensorData = doResampling(clippedData[0], clippedData[1], fs=50.0)
+
+        // Too less sampled to provide proper classification
+        if (resampledSensorData[0][0].size < 200) {
+            return Pair(-1, arrayOf(0.0, 0.0, 0.0, 0.0))
+        }
+
+        val arr = Array<Double>(size=10, init={0.0})
+        return Pair<Int, Array<Double>>(-1,arr)
+    }
+
+    private fun doComputationkNN(gyroSensorData: Array<Array<Double>>,
                               accelSensorData: Array<Array<Double>>): Pair<Int,Array<Double>> {
 
         val clippedData = clipData(gyroSensorData, accelSensorData);
@@ -361,43 +380,47 @@ class ClassificationThread
     }
 
     private fun doResampling(gyroSensorData: Array<Array<Double>>,
-                             accelSensorData: Array<Array<Double>>): Array<Array<Array<Double>>> {
+                             accelSensorData: Array<Array<Double>>,
+                             fs:Double=100.0): Array<Array<Array<Double>>> {
 
-        val gyroSensorDataResampled = resampleTimeSeries(gyroSensorData)
-        val accelSensorDataResampled = resampleTimeSeries(accelSensorData)
+        val gyroSensorDataResampled = resampleTimeSeries(gyroSensorData, fs=fs)
+        val accelSensorDataResampled = resampleTimeSeries(accelSensorData, fs=fs)
 
         return arrayOf(gyroSensorDataResampled, accelSensorDataResampled)
     }
 
     private fun clipData(
             gyroSensorData: Array<Array<Double>>,
-            accelSensorData: Array<Array<Double>>): Array<Array<Array<Double>>> {
-        val clippedGyroData = clipDataSeries(gyroSensorData);
-        val clippedAccelData = clipDataSeries(accelSensorData);
+            accelSensorData: Array<Array<Double>>,
+            T_lim:Double=10.0): Array<Array<Array<Double>>> {
+        val clippedGyroData = clipDataSeries(gyroSensorData, T_lim=T_lim);
+        val clippedAccelData = clipDataSeries(accelSensorData, T_lim=T_lim);
 
         return arrayOf(
                 clippedGyroData,
                 clippedAccelData)
     }
 
-    private fun clipDataSeries(dataArray: Array<Array<Double>>): Array<Array<Double>> {
+    private fun clipDataSeries(dataArray: Array<Array<Double>>, T_lim:Double=10.0): Array<Array<Double>> {
         val tmax = dataArray[0][0];
         var t0_idx = -1;
 
         val N_samples = dataArray[0].size
 
-        for (k in 0 until N_samples) {
-            if (dataArray[0][k] < 0.0F){
-                t0_idx = k - 1;
-                break;
-            }  else if (tmax - dataArray[0][k] >= 5) {
-                t0_idx = k;
-                break;
+        if (dataArray[0][0] - dataArray[0].last() < T_lim) {
+            t0_idx = dataArray[0].lastIndex;
+        } else {
+            // Search for the end of the timeframe
+            for (k in 0 until N_samples) {
+                if (tmax - dataArray[0][k] >= T_lim) {
+                    t0_idx = k;
+                    break;
+                }
             }
         }
 
         if (t0_idx == -1) {
-            t0_idx = N_samples - 1;
+            t0_idx = dataArray[0].lastIndex;
         }
 
         return arrayOf(
@@ -408,12 +431,12 @@ class ClassificationThread
         )
     }
 
-    private fun resampleTimeSeries(dataArray: Array<Array<Double>>): Array<Array<Double>> {
+    private fun resampleTimeSeries(dataArray: Array<Array<Double>>, fs:Double=100.0): Array<Array<Double>> {
         val t_old = dataArray[0]
         val t0 = t_old[0]
         val t_new = t_old.map { tk -> tk - t0 };
 
-        val N_samples: Int = (t_new[t_new.size - 1]* sampling_frequency).toInt();
+        val N_samples: Int = (t_new[t_new.size - 1]* fs).toInt();
         val x1 = Array<Double>(size=N_samples, init={0.0});
         val x2 = Array<Double>(size=N_samples, init={0.0});
         val x3 = Array<Double>(size=N_samples, init={0.0});
@@ -422,7 +445,7 @@ class ClassificationThread
 
         for (k: Int in 0 until N_samples - 1) {
 
-            val tk = k / sampling_frequency;
+            val tk = k / fs;
 
             if (tk > t_new[i + 1]) {
                 i++;
