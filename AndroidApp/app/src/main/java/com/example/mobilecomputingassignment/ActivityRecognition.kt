@@ -8,26 +8,27 @@ import android.hardware.SensorManager
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Handler
-import android.os.Looper
 import android.os.Message
-import android.service.autofill.FieldClassification
-import kotlinx.coroutines.*
+import android.util.Range
 import java.util.*
 import java.lang.Thread
-import android.util.Log
 import android.view.View
 import android.widget.Button
 import android.widget.TextView
+import com.example.mobilecomputingassignment.ml.ConvertedModel
+import org.tensorflow.lite.DataType
+import org.tensorflow.lite.support.tensorbuffer.TensorBuffer
 import java.io.*
 import java.lang.NumberFormatException
+import java.nio.ByteBuffer
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.concurrent.locks.*
-import java.util.concurrent.*
-import java.util.regex.Matcher
 import java.util.regex.Pattern
-import kotlin.math.max
 import kotlin.math.pow
+
+
+
 
 class ActivityRecognition : AppCompatActivity(), SensorEventListener, View.OnClickListener {
 
@@ -104,7 +105,7 @@ class ActivityRecognition : AppCompatActivity(), SensorEventListener, View.OnCli
         // Comment the line below for regular operation. If uncommented,
         // the application loads a defined test-set and starts the classification
         // on the test-data.
-        testsetDirectory = "${filesDir}/test_set"
+        //testsetDirectory = "${filesDir}/test_set"
 
         bReturnToMainButton = findViewById(R.id.button_activity_return);
         bReturnToMainButton.setOnClickListener(this)
@@ -245,13 +246,36 @@ class ClassificationThread
     private var testsetSize: Int = -1;
     private var currentTestIndex: Int = -1;
 
+
+
     // Set this to true to terminate the thread.
     var terminateThread: Boolean = false;
     private val sampling_frequency: Double = 100.0;
     private lateinit var neighbors: Array<Array<Double>>;
     private lateinit var neighbor_classes: Array<Int>;
 
+
+    private lateinit var model: ConvertedModel;
+    private lateinit var inputFeature0: TensorBuffer;
+    private val activity_labels: Array<String> = arrayOf(
+        "Walking",
+        "Walking Upstairs",
+        "Walking Downstairs",
+        "Sitting",
+        "Standing",
+        "Laying",
+        "Stand to Sit",
+        "Sit to Stand",
+        "Sit to Lie",
+        "Lie to Sit",
+        "Stand to Lie",
+        "Lie to Stand"
+    )
+
     override fun run() {
+
+        model = ConvertedModel.newInstance(activityThread);
+        inputFeature0 = TensorBuffer.createFixedSize(intArrayOf(1, 1200), DataType.FLOAT32);
 
         // Load the reference-data for kNN
         val reader = ReferenceDataCsvReader()
@@ -327,15 +351,15 @@ class ClassificationThread
             }
 
             // Do the computation with kNN classifier
-            val (activity, probabilities) = doComputationkNN(gyroSensorData, accelSensorData)
+            /*val (activity, probabilities) = doComputationkNN(gyroSensorData, accelSensorData)
             // <activity> < 0 in case of too less sensor-data (e.g. right after starting the app)
             if (activity >= 0) {
                 val msg = Message()
                 msg.obj = probabilities
                 activityThread.probabilityUpdateHandler.sendMessage(msg)
-            }
+            }*/
 
-            //val (activity, probabilities) = doComputationTFLite(gyroSensorData, accelSensorData)
+            val (activity, probabilities) = doComputationTFLite(gyroSensorData, accelSensorData)
 
 
 
@@ -350,17 +374,54 @@ class ClassificationThread
     private fun doComputationTFLite(gyroSensorData: Array<Array<Double>>,
                                     accelSensorData: Array<Array<Double>>): Pair<Int,Array<Double>> {
 
+        //Extract the available data from the buffer it is not filled completely
+        val clippedData = clipData(gyroSensorData, accelSensorData, T_lim = 4.0);
+
         // Too less data available
-        if (gyroSensorData[0][0] - gyroSensorData[0].last() < 4.0) {
+        if (clippedData[0][0].last() - clippedData[0][0].first() < 4.0) {
             return Pair(-1, arrayOf(0.0, 0.0, 0.0, 0.0))
         }
 
-        val resampledSensorData = doResampling(gyroSensorData,
-            accelSensorData,
+        val resampledSensorData = doResampling(clippedData[0],
+            clippedData[0],
             fs=50.0,
             Ns=200)
 
 
+        var tmp: FloatArray = FloatArray(size=1200, init={0.0F})
+
+        // Load Gyroscope Data
+        for (k in 0 until 2) {
+            for (l in 0 until 199) {
+                val idx = k * 200 + l
+                tmp[idx] = resampledSensorData[0][k][l].toFloat()
+            }
+        }
+        // Load Accelerometer Data
+        for (k in 3 until 5) {
+            for (l in 0 until 199) {
+                val idx = k * 200 + l
+                tmp[idx] = resampledSensorData[1][k-3][l].toFloat()
+            }
+        }
+
+        // Execute the model inference
+        inputFeature0.loadArray(tmp)
+        val outputs = model.process(inputFeature0)
+
+        // Convert output-data
+        val outputFeature0 = outputs.outputFeature0AsTensorBuffer
+        val outputArray = outputFeature0.floatArray
+
+        val outputIndexArray = (0 until 11).toList().toIntArray()
+        val sortedOutputIndexArray = outputIndexArray.sortedBy { idx -> outputArray[idx] }
+
+        for (k in 0 until 3) {
+            print("%18s:  %4.2f  |  ".format(
+                activity_labels[sortedOutputIndexArray[k]],
+                outputArray[sortedOutputIndexArray[k]] * 100))
+        }
+        print("\n")
 
 
 
