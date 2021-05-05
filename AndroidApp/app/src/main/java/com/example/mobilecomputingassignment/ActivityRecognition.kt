@@ -358,6 +358,8 @@ class ClassificationThread
             return Pair(-1, arrayOf(0.0, 0.0, 0.0, 0.0))
         }
 
+
+
         val arr = Array<Double>(size=10, init={0.0})
         return Pair<Int, Array<Double>>(-1,arr)
     }
@@ -381,7 +383,8 @@ class ClassificationThread
 
     private fun doResampling(gyroSensorData: Array<Array<Double>>,
                              accelSensorData: Array<Array<Double>>,
-                             fs:Double=100.0): Array<Array<Array<Double>>> {
+                             fs:Double=100.0,
+                             Ns:Int = -1): Array<Array<Array<Double>>> {
 
         val gyroSensorDataResampled = resampleTimeSeries(gyroSensorData, fs=fs)
         val accelSensorDataResampled = resampleTimeSeries(accelSensorData, fs=fs)
@@ -431,19 +434,27 @@ class ClassificationThread
         )
     }
 
-    private fun resampleTimeSeries(dataArray: Array<Array<Double>>, fs:Double=100.0): Array<Array<Double>> {
+    private fun resampleTimeSeries(dataArray: Array<Array<Double>>,
+                                   fs:Double=100.0,
+                                   N_samples_out:Int = -1): Array<Array<Double>> {
         val t_old = dataArray[0]
         val t0 = t_old[0]
         val t_new = t_old.map { tk -> tk - t0 };
 
-        val N_samples: Int = (t_new[t_new.size - 1]* fs).toInt();
-        val x1 = Array<Double>(size=N_samples, init={0.0});
-        val x2 = Array<Double>(size=N_samples, init={0.0});
-        val x3 = Array<Double>(size=N_samples, init={0.0});
+        var __N_samples_out: Int = -1
+        if (N_samples_out > 0) {
+            __N_samples_out = N_samples_out
+        } else {
+            __N_samples_out = (t_new[t_new.size - 1]* fs).toInt();
+        }
+
+        val x1 = Array<Double>(size=__N_samples_out, init={0.0});
+        val x2 = Array<Double>(size=__N_samples_out, init={0.0});
+        val x3 = Array<Double>(size=__N_samples_out, init={0.0});
 
         var i: Int = 0;
 
-        for (k: Int in 0 until N_samples - 1) {
+        for (k: Int in 0 until __N_samples_out - 1) {
 
             val tk = k / fs;
 
