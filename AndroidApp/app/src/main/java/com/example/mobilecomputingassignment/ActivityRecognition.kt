@@ -15,12 +15,8 @@ import java.lang.Thread
 import android.view.View
 import android.widget.Button
 import android.widget.TextView
-import com.example.mobilecomputingassignment.ml.ConvertedModel
-import org.tensorflow.lite.DataType
-import org.tensorflow.lite.support.tensorbuffer.TensorBuffer
 import java.io.*
 import java.lang.NumberFormatException
-import java.nio.ByteBuffer
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.concurrent.locks.*
@@ -84,9 +80,6 @@ class ActivityRecognition : AppCompatActivity(), SensorEventListener, View.OnCli
     var testsetDirectory: String = "";
 
     lateinit var probabilityUpdateHandler:  Handler;
-
-
-
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -230,9 +223,6 @@ class ActivityRecognition : AppCompatActivity(), SensorEventListener, View.OnCli
 }
 
 
-
-
-
 class ClassificationThread
     constructor(val activityThread: ActivityRecognition) : Thread() {
 
@@ -255,8 +245,8 @@ class ClassificationThread
     private lateinit var neighbor_classes: Array<Int>;
 
 
-    private lateinit var model: ConvertedModel;
-    private lateinit var inputFeature0: TensorBuffer;
+    //private lateinit var model: ConvertedModel;
+    //private lateinit var inputFeature0: TensorBuffer;
     private val activity_labels: Array<String> = arrayOf(
         "Walking",
         "Walking Upstairs",
@@ -274,8 +264,8 @@ class ClassificationThread
 
     override fun run() {
 
-        model = ConvertedModel.newInstance(activityThread);
-        inputFeature0 = TensorBuffer.createFixedSize(intArrayOf(1, 1200), DataType.FLOAT32);
+        //model = ConvertedModel.newInstance(activityThread);
+        //inputFeature0 = TensorBuffer.createFixedSize(intArrayOf(1, 1200), DataType.FLOAT32);
 
         // Load the reference-data for kNN
         val reader = ReferenceDataCsvReader()
@@ -351,15 +341,16 @@ class ClassificationThread
             }
 
             // Do the computation with kNN classifier
-            /*val (activity, probabilities) = doComputationkNN(gyroSensorData, accelSensorData)
+            val (activity, probabilities) = doComputationkNN(gyroSensorData, accelSensorData)
             // <activity> < 0 in case of too less sensor-data (e.g. right after starting the app)
             if (activity >= 0) {
                 val msg = Message()
                 msg.obj = probabilities
                 activityThread.probabilityUpdateHandler.sendMessage(msg)
-            }*/
+            }
 
-            val (activity, probabilities) = doComputationTFLite(gyroSensorData, accelSensorData)
+
+            //val (activity, probabilities) = doComputationTFLite(gyroSensorData, accelSensorData)
 
 
 
@@ -404,7 +395,7 @@ class ClassificationThread
                 tmp[idx] = resampledSensorData[1][k-3][l].toFloat()
             }
         }
-
+        /*
         // Execute the model inference
         inputFeature0.loadArray(tmp)
         val outputs = model.process(inputFeature0)
@@ -424,7 +415,7 @@ class ClassificationThread
         print("\n")
 
 
-
+        */
         val arr = Array<Double>(size=10, init={0.0})
         return Pair<Int, Array<Double>>(-1,arr)
     }

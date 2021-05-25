@@ -15,8 +15,9 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.AppCompat">
-        <activity android:name=".DataCapturing"></activity>
-        <activity android:name=".ActivityRecognition"></activity>
+        <activity android:name=".TransferLearning"></activity>
+        <activity android:name=".DataCapturing" />
+        <activity android:name=".ActivityRecognition" />
         <activity android:name=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

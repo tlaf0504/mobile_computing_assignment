@@ -12,12 +12,45 @@
     <string name="russian_twist_percentage">%1$.2f</string>
     <string name="crunches_percentage">%1$.2f</string>
 
+    <string name="activity_1_left_val">%1.2f</string>
+    <string name="activity_1_right_val">%1.2f</string>
+    <string name="activity_2_left_val">%1.2f</string>
+    <string name="activity_2_right_val">%1.2f</string>
+    <string name="activity_3_left_val">%1.2f</string>
+    <string name="activity_3_right_val">%1.2f</string>
+    <string name="activity_4_left_val">%1.2f</string>
+    <string name="activity_4_right_val">%1.2f</string>
+    <string name="activity_5_left_val">%1.2f</string>
+    <string name="activity_5_right_val">%1.2f</string>
+    <string name="activity_6_left_val">%1.2f</string>
+    <string name="activity_6_right_val">%1.2f</string>
+    <string name="activity_7_left_val">%1.2f</string>
+    <string name="activity_7_right_val">%1.2f</string>
+    <string name="activity_8_left_val">%1.2f</string>
+    <string name="activity_8_right_val">%1.2f</string>
+    <string name="activity_9_left_val">%1.2f</string>
+    <string name="activity_9_right_val">%1.2f</string>
+    <string name="activity_10_left_val">%1.2f</string>
+    <string name="activity_10_right_val">%1.2f</string>
+    <string name="activity_11_left_val">%1.2f</string>
+    <string name="activity_11_right_val">%1.2f</string>
+    <string name="activity_12_left_val">%1.2f</string>
+    <string name="activity_12_right_val">%1.2f</string>
+
+    <string name="classified_activity_left_val">%s</string>
+    <string name="classified_activity_right_val">%s</string>
+
     <string-array name="activity_selection_spinner_entries">
         <item>Push-Ups</item>
         <item>Crunches</item>
         <item>Curls</item>
         <item>Triceps</item>
         <item>Russian Twist</item>
-        <item></item>
+        <item>Walking</item>
+        <item>Walking Upstairs</item>
+        <item>Walking Downstairs</item>
+        <item>Sitting</item>
+        <item>Laying</item>
+        <item>Standing</item>
     </string-array>
 </resources>

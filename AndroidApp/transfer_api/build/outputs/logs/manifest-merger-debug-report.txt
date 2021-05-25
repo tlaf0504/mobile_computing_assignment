@@ -1,0 +1,25 @@
+-- Merging decision tree log ---
+manifest
+ADDED from /run/media/tobiaslafer/shared/Nextcloud_sync/NAS_share_tobias/Backup_Tobias/Documents/Uni/SS_20_21/Mobile_Computing/mobile_computing_assignment/AndroidApp/transfer_api/src/main/AndroidManifest.xml:1:1-2:58
+INJECTED from /run/media/tobiaslafer/shared/Nextcloud_sync/NAS_share_tobias/Backup_Tobias/Documents/Uni/SS_20_21/Mobile_Computing/mobile_computing_assignment/AndroidApp/transfer_api/src/main/AndroidManifest.xml:1:1-2:58
+INJECTED from /run/media/tobiaslafer/shared/Nextcloud_sync/NAS_share_tobias/Backup_Tobias/Documents/Uni/SS_20_21/Mobile_Computing/mobile_computing_assignment/AndroidApp/transfer_api/src/main/AndroidManifest.xml:1:1-2:58
+	package
+		ADDED from /run/media/tobiaslafer/shared/Nextcloud_sync/NAS_share_tobias/Backup_Tobias/Documents/Uni/SS_20_21/Mobile_Computing/mobile_computing_assignment/AndroidApp/transfer_api/src/main/AndroidManifest.xml:2:5-56
+		INJECTED from /run/media/tobiaslafer/shared/Nextcloud_sync/NAS_share_tobias/Backup_Tobias/Documents/Uni/SS_20_21/Mobile_Computing/mobile_computing_assignment/AndroidApp/transfer_api/src/main/AndroidManifest.xml
+		INJECTED from /run/media/tobiaslafer/shared/Nextcloud_sync/NAS_share_tobias/Backup_Tobias/Documents/Uni/SS_20_21/Mobile_Computing/mobile_computing_assignment/AndroidApp/transfer_api/src/main/AndroidManifest.xml
+	xmlns:android
+		ADDED from /run/media/tobiaslafer/shared/Nextcloud_sync/NAS_share_tobias/Backup_Tobias/Documents/Uni/SS_20_21/Mobile_Computing/mobile_computing_assignment/AndroidApp/transfer_api/src/main/AndroidManifest.xml:1:11-69
+uses-sdk
+INJECTED from /run/media/tobiaslafer/shared/Nextcloud_sync/NAS_share_tobias/Backup_Tobias/Documents/Uni/SS_20_21/Mobile_Computing/mobile_computing_assignment/AndroidApp/transfer_api/src/main/AndroidManifest.xml reason: use-sdk injection requested
+INJECTED from /run/media/tobiaslafer/shared/Nextcloud_sync/NAS_share_tobias/Backup_Tobias/Documents/Uni/SS_20_21/Mobile_Computing/mobile_computing_assignment/AndroidApp/transfer_api/src/main/AndroidManifest.xml
+INJECTED from /run/media/tobiaslafer/shared/Nextcloud_sync/NAS_share_tobias/Backup_Tobias/Documents/Uni/SS_20_21/Mobile_Computing/mobile_computing_assignment/AndroidApp/transfer_api/src/main/AndroidManifest.xml
+INJECTED from /run/media/tobiaslafer/shared/Nextcloud_sync/NAS_share_tobias/Backup_Tobias/Documents/Uni/SS_20_21/Mobile_Computing/mobile_computing_assignment/AndroidApp/transfer_api/src/main/AndroidManifest.xml
+INJECTED from /run/media/tobiaslafer/shared/Nextcloud_sync/NAS_share_tobias/Backup_Tobias/Documents/Uni/SS_20_21/Mobile_Computing/mobile_computing_assignment/AndroidApp/transfer_api/src/main/AndroidManifest.xml
+	android:targetSdkVersion
+		INJECTED from /run/media/tobiaslafer/shared/Nextcloud_sync/NAS_share_tobias/Backup_Tobias/Documents/Uni/SS_20_21/Mobile_Computing/mobile_computing_assignment/AndroidApp/transfer_api/src/main/AndroidManifest.xml
+		ADDED from /run/media/tobiaslafer/shared/Nextcloud_sync/NAS_share_tobias/Backup_Tobias/Documents/Uni/SS_20_21/Mobile_Computing/mobile_computing_assignment/AndroidApp/transfer_api/src/main/AndroidManifest.xml
+		INJECTED from /run/media/tobiaslafer/shared/Nextcloud_sync/NAS_share_tobias/Backup_Tobias/Documents/Uni/SS_20_21/Mobile_Computing/mobile_computing_assignment/AndroidApp/transfer_api/src/main/AndroidManifest.xml
+	android:minSdkVersion
+		INJECTED from /run/media/tobiaslafer/shared/Nextcloud_sync/NAS_share_tobias/Backup_Tobias/Documents/Uni/SS_20_21/Mobile_Computing/mobile_computing_assignment/AndroidApp/transfer_api/src/main/AndroidManifest.xml
+		ADDED from /run/media/tobiaslafer/shared/Nextcloud_sync/NAS_share_tobias/Backup_Tobias/Documents/Uni/SS_20_21/Mobile_Computing/mobile_computing_assignment/AndroidApp/transfer_api/src/main/AndroidManifest.xml
+		INJECTED from /run/media/tobiaslafer/shared/Nextcloud_sync/NAS_share_tobias/Backup_Tobias/Documents/Uni/SS_20_21/Mobile_Computing/mobile_computing_assignment/AndroidApp/transfer_api/src/main/AndroidManifest.xml
