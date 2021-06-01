@@ -34,8 +34,8 @@ class MainActivity : AppCompatActivity(),
         //val intent = Intent(this, ActivityRecognition::class.java)
         //startActivity(intent);
 
-        //val intent = Intent(this, TransferLearning::class.java)
-        //startActivity(intent);
+        val intent = Intent(this, TransferLearning::class.java)
+        startActivity(intent);
 
     }
 

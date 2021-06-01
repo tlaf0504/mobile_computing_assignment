@@ -10,8 +10,7 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Message
 import android.view.View
-import android.widget.Button
-import android.widget.TextView
+import android.widget.*
 import org.tensorflow.lite.Interpreter
 import org.tensorflow.lite.examples.transfer.api.TransferLearningModel
 import org.tensorflow.lite.examples.transfer.api.AssetModelLoader
@@ -31,7 +30,11 @@ import java.util.*
 import java.util.concurrent.locks.ReentrantLock
 
 
-class TransferLearning : AppCompatActivity(), SensorEventListener, View.OnClickListener {
+class TransferLearning : AppCompatActivity(),
+    SensorEventListener,
+    CompoundButton.OnCheckedChangeListener,
+    View.OnClickListener,
+    AdapterView.OnItemSelectedListener{
 
     private lateinit var sensorManager: SensorManager;
     private lateinit var gyroSensor: Sensor;
@@ -39,7 +42,13 @@ class TransferLearning : AppCompatActivity(), SensorEventListener, View.OnClickL
     private lateinit var classificationThread: TFLClassificationThread;
     private lateinit var classificationTimer: Timer;
     private lateinit var classificationTimerTask: TFLClassificationTimerTask;
+    private lateinit var tflDataCapturingThread: TFLDataCapturingThread;
     private lateinit var bReturnToMainButton: Button;
+    private lateinit var spActivitySelectionSpinner: Spinner;
+
+    private lateinit var captureDataSwitch: Switch;
+    private var captureDataSwitchState:Boolean = false;
+    private var captureDataSwitchStateLock = ReentrantLock()
 
     /* ========== Sensor-data arrays ========== */
 
@@ -61,15 +70,6 @@ class TransferLearning : AppCompatActivity(), SensorEventListener, View.OnClickL
         Array<Double>(size=arraySize, init={0.0})
     );
 
-    val writeDataLock = ReentrantLock()
-    // The single buffer-operations like switchBufferSet() or cleanInactiveBufferSet()
-    // are used prevent race-conditions between them.
-    private val bufferOperationLock = ReentrantLock()
-    private var gyroDataCounter: Int = 0;
-    private var accelDataCounter: Int = 0;
-
-    lateinit var referenceDataFile : String;
-    var testsetDirectory: String = "";
 
     lateinit var probabilityUpdateHandler: Handler;
 
@@ -88,17 +88,46 @@ class TransferLearning : AppCompatActivity(), SensorEventListener, View.OnClickL
         "Lie to Stand"
     )
 
+    // A lock acquired while writing data to the sensor-data arrays.
+    // Acquire to lock data capturing.
+    val writeDataLock = ReentrantLock()
+
+    // Acquire to lock classification.
     val classificationLock = ReentrantLock()
+
+    // The condition below is triggered when the user toggles the data-capturing switch in the UI.
+    val transferLearningDataCapturingLock = ReentrantLock()
+    val transferLearningDataCapturingCondition = transferLearningDataCapturingLock.newCondition()
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_transfer_learning)
 
+
+        /* Initialization-code taken from
+         * https://developer.android.com/guide/topics/ui/controls/spinner (2021-04-07)
+         */
+        spActivitySelectionSpinner = findViewById(R.id.tfl_activity_sample_spinner)
+        spActivitySelectionSpinner.onItemSelectedListener = this // Register Listener
+
+        ArrayAdapter.createFromResource(
+            this,
+            R.array.transfer_learning_spinner_entries,
+            android.R.layout.simple_spinner_item
+        ).also {adapter ->
+            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            spActivitySelectionSpinner.adapter = adapter}
+
+
+
         probabilityUpdateHandler = Handler(mainLooper, Handler.Callback { msg -> probabilityUpdateHandlerCallback(msg) })
 
         bReturnToMainButton = findViewById(R.id.button_transfer_learning_return);
         bReturnToMainButton.setOnClickListener(this)
+
+        captureDataSwitch = findViewById(R.id.tfl_recording_switch)
+        captureDataSwitch.setOnCheckedChangeListener(this)
 
         sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager;
         gyroSensor = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
@@ -109,6 +138,11 @@ class TransferLearning : AppCompatActivity(), SensorEventListener, View.OnClickL
         classificationTimerTask = TFLClassificationTimerTask(classificationThread, this);
 
         classificationThread.start()
+
+        tflDataCapturingThread = TFLDataCapturingThread(this)
+        tflDataCapturingThread.start()
+
+
     }
 
     override fun onStart() {
@@ -211,7 +245,7 @@ class TransferLearning : AppCompatActivity(), SensorEventListener, View.OnClickL
     }
 
     // This method is NOT thread-safe!
-    private fun flushSensorDataBuffers() {
+    fun flushSensorDataBuffers() {
 
         gyroSensorArray[0].fill(-1.0)
         gyroSensorArray[1].fill(0.0)
@@ -254,31 +288,59 @@ class TransferLearning : AppCompatActivity(), SensorEventListener, View.OnClickL
         }
     }
 
-    fun acquireTransferLearningActivitySamples(activityLabel: Int) {
-        // Interrupt data-acquisition
-        writeDataLock.lock()
+    fun getTransferLearningDataCapturingSwitchState(): Boolean {
+        var state = false
+        captureDataSwitchStateLock.lock()
         try {
-            // Clean up sensor data buffers
-            flushSensorDataBuffers()
-
-
-
+            state = captureDataSwitchState
         } finally {
-            writeDataLock.unlock()
+            captureDataSwitchStateLock.unlock()
         }
+        return state
     }
-
     override fun onClick(v: View?) {
         if (v?.id == this.bReturnToMainButton.id) {
             val intent = Intent(this, MainActivity::class.java);
             startActivity(intent);
         }
     }
+
+    // Callback for Spinner (AdapterView.OnItemSelectedListener)
+    override fun onItemSelected(parent: AdapterView<*>, view: View?, pos: Int, id: Long) {
+
+        // An item was selected. You can retrieve the selected item using
+        // parent.getItemAtPosition(pos)
+        val selected_item = parent.getItemAtPosition(pos)
+    }
+
+    // Must be implemented by class for AdapterView.OnItemSelectedListener
+    override fun onNothingSelected(parent: AdapterView<*>) {}
+
+    // Listener for data-capturing switch state change.
+    override fun onCheckedChanged(buttonView: CompoundButton?, isChecked: Boolean) {
+
+        // Thread-safe setting of button state
+        captureDataSwitchStateLock.lock()
+        try {
+            captureDataSwitchState = isChecked
+        } finally {
+            captureDataSwitchStateLock.unlock()
+        }
+
+        // Trigger data capturing if possible
+        if (transferLearningDataCapturingLock.tryLock()) {
+            try {
+                transferLearningDataCapturingCondition.signal()
+            } finally {
+                transferLearningDataCapturingLock.unlock()
+            }
+        }
+    }
 }
 
 
 class TFLClassificationThread
-constructor(val activityThread: TransferLearning) : Thread() {
+constructor(val activityThread: TransferLearning): Thread() {
 
     val TEST:Boolean = false
     lateinit var testSetData: MutableList<TestSetSample>;
@@ -323,8 +385,8 @@ constructor(val activityThread: TransferLearning) : Thread() {
 
             activityThread.writeDataLock.lock()
             try {
-                gyroSensorData = deepcopySensorDataBuffer(activityThread.gyroSensorArray);
-                accelSensorData = deepcopySensorDataBuffer(activityThread.accelSensorArray);
+                gyroSensorData = SignalProcessingUtilities.deepcopySensorDataBuffer(activityThread.gyroSensorArray);
+                accelSensorData = SignalProcessingUtilities.deepcopySensorDataBuffer(activityThread.accelSensorArray);
             } finally {
                 activityThread.writeDataLock.unlock()
             }
@@ -486,24 +548,12 @@ constructor(val activityThread: TransferLearning) : Thread() {
         gyroSensorData: Array<Array<Double>>,
         accelSensorData: Array<Array<Double>>,
         T_lim:Double=10.0): Array<Array<Array<Double>>> {
-        val clippedGyroData = SignalProcessingUtilities.clipDataSeries(gyroSensorData, T_lim=T_lim);
-        val clippedAccelData = SignalProcessingUtilities.clipDataSeries(accelSensorData, T_lim=T_lim);
+        val clippedGyroData = SignalProcessingUtilities.clipDataSeries(gyroSensorData, T_clip=T_lim);
+        val clippedAccelData = SignalProcessingUtilities.clipDataSeries(accelSensorData, T_clip=T_lim);
 
         return arrayOf(
             clippedGyroData,
             clippedAccelData)
-    }
-
-    private fun deepcopySensorDataBuffer(buffer: Array<Array<Double>>): Array<Array<Double>> {
-
-        var arrayOut: Array<Array<Double>> = arrayOf(
-            Array<Double>(size = activityThread.arraySize, init = {idx -> buffer[0][idx]}),
-            Array<Double>(size = activityThread.arraySize, init = {idx -> buffer[1][idx]}),
-            Array<Double>(size = activityThread.arraySize, init = {idx -> buffer[2][idx]}),
-            Array<Double>(size = activityThread.arraySize, init = {idx -> buffer[3][idx]})
-        )
-
-        return arrayOut
     }
 
     private fun loadTestSet() :MutableList<TestSetSample>{
@@ -585,6 +635,129 @@ constructor(val activityThread: TransferLearning) : Thread() {
     }
 }
 
+class TFLDataCapturingThread
+constructor(val activityThread: TransferLearning): Thread() {
+    override fun run() {
+
+        waitUntilDataCaptureEnabled()
+        flushSensorDataBuffers()
+        waitUntilDataCaptureDisabled()
+
+        // When locked, toggling the UI-button has not effect, except on its state-variable in the
+        // activity-thread
+        activityThread.transferLearningDataCapturingLock.lock()
+        try {
+            // Deepcopy the current values from the sensor-data buffers in a thread-save way
+            val (gyroSensorData, accelSensorData) = copyBuffers()
+            doProcessing(gyroSensorData, accelSensorData)
+        } finally {
+            activityThread.transferLearningDataCapturingLock.unlock()
+        }
+    }
+
+    fun waitUntilDataCaptureEnabled() {
+        // Wait for the user to enable data capturing via the corresponding UI-switch
+        while(!activityThread.getTransferLearningDataCapturingSwitchState()) {
+            activityThread.transferLearningDataCapturingLock.lock()
+            try {
+                activityThread.transferLearningDataCapturingCondition.await()
+            } finally {
+                activityThread.transferLearningDataCapturingLock.unlock()
+            }
+        }
+    }
+
+    fun waitUntilDataCaptureDisabled() {
+        // Wait for the user to disable data capturing via the corresponding UI-switch
+        while(activityThread.getTransferLearningDataCapturingSwitchState()) {
+            activityThread.transferLearningDataCapturingLock.lock()
+            try {
+                activityThread.transferLearningDataCapturingCondition.await()
+            } finally {
+                activityThread.transferLearningDataCapturingLock.unlock()
+            }
+        }
+    }
+
+    fun flushSensorDataBuffers() {
+        // Flush the sensor data buffers
+        activityThread.writeDataLock.lock()
+        try {
+            activityThread.flushSensorDataBuffers()
+        } finally {
+            activityThread.writeDataLock.unlock()
+        }
+    }
+
+    fun copyBuffers(): Pair<Array<Array<Double>>, Array<Array<Double>>> {
+        // Copy the sensor-data arrays
+        val gyroSensorData: Array<Array<Double>>;
+        val accelSensorData: Array<Array<Double>>;
+
+        // Interrupt writing new sensor-data to the buffers
+        activityThread.writeDataLock.lock()
+        try {
+            gyroSensorData = SignalProcessingUtilities.deepcopySensorDataBuffer(activityThread.gyroSensorArray);
+            accelSensorData = SignalProcessingUtilities.deepcopySensorDataBuffer(activityThread.accelSensorArray);
+        } finally {
+            activityThread.writeDataLock.unlock()
+        }
+
+        return Pair(gyroSensorData, accelSensorData)
+    }
+
+    fun doProcessing(gyroSensorData: Array<Array<Double>>, accelSensorData: Array<Array<Double>>) {
+
+        val (gyroDataClipped, accelDataClipped) = clipData(gyroSensorData, accelSensorData)
+        val (gyroDataResampled, accelDataResampled) = resampleData(gyroDataClipped, accelDataClipped)
+        val timeframes = splitIntoTimeframes(gyroDataResampled, accelDataResampled)
+
+        val k = 5
+    }
+
+    fun clipData(gyroSensorData: Array<Array<Double>>, accelSensorData: Array<Array<Double>>): Pair<Array<Array<Double>>, Array<Array<Double>>> {
+        val gyroDataClipped = SignalProcessingUtilities.clipDataSeriesBackoff(gyroSensorData, T_backoff = 1.0)
+        val accelDataClipped = SignalProcessingUtilities.clipDataSeriesBackoff(accelSensorData, T_backoff = 1.0)
+
+        return Pair(gyroDataClipped, accelDataClipped)
+    }
+
+    fun resampleData(gyroSensorData: Array<Array<Double>>, accelSensorData: Array<Array<Double>>): Pair<Array<Array<Double>>, Array<Array<Double>>> {
+        val gyroDataResampled = SignalProcessingUtilities.resampleTimeSeries(gyroSensorData, fs=50.0)
+        val accelDataResampled = SignalProcessingUtilities.resampleTimeSeries(accelSensorData, fs=50.0)
+
+        return Pair(gyroDataResampled, accelDataResampled)
+    }
+
+    fun splitIntoTimeframes(gyroSensorData: Array<Array<Double>>,
+                            accelSensorData: Array<Array<Double>>,
+                            N_samples_frame:Int = 200, fs:Double=50.0,
+                            T_overlap:Double=3.0): Array<Array<Array<Double>>> {
+        val N_samples_data: Int = gyroSensorData[0].size
+        val N_samples_overlap: Int = (T_overlap * fs).toInt()
+        val N_samples_non_overlap: Int = N_samples_frame - N_samples_overlap
+
+        // Number of overlapping timeframes in data array
+        val N_frames = 1 + ((N_samples_data -  N_samples_frame) / N_samples_non_overlap.toDouble()).toInt()
+
+        val sampleList = mutableListOf<Array<Array<Double>>>()
+        for (k in 0 until N_frames - 1) {
+            val idx_start = k * N_samples_non_overlap
+            val idx_end = idx_start + N_samples_frame - 1
+
+            sampleList.add(arrayOf(
+                gyroSensorData[0].slice(idx_start..idx_end).toTypedArray(),
+                gyroSensorData[1].slice(idx_start..idx_end).toTypedArray(),
+                gyroSensorData[2].slice(idx_start..idx_end).toTypedArray(),
+                accelSensorData[0].slice(idx_start..idx_end).toTypedArray(),
+                accelSensorData[1].slice(idx_start..idx_end).toTypedArray(),
+                accelSensorData[2].slice(idx_start..idx_end).toTypedArray()
+            ))
+        }
+        return sampleList.toTypedArray()
+    }
+}
+
 class TFLClassificationTimerTask
 constructor(val classificationObject: TFLClassificationThread, val activityThread: TransferLearning): TimerTask() {
 
@@ -595,7 +768,7 @@ constructor(val classificationObject: TFLClassificationThread, val activityThrea
             // Trigger the classification
             classificationObject.synchronizationLock.lock()
             try {
-                classificationObject.synchronizationCondition.signal()
+                //classificationObject.synchronizationCondition.signal()
             } finally {
                 classificationObject.synchronizationLock.unlock()
                 activityThread.classificationLock.unlock()
@@ -613,50 +786,131 @@ class TestSetSample
 
 class SignalProcessingUtilities {
     companion object {
-        fun clipDataSeries(dataArray: Array<Array<Double>>, T_lim:Double=10.0): Array<Array<Double>> {
-            val tmax = dataArray[0][0];
+        fun clipDataSeries(dataArray: Array<Array<Double>>, T_clip:Double=10.0): Array<Array<Double>> {
+            val T_high = dataArray[0][0];
             val N_samples = dataArray[0].size
 
-            // If the last row in the array is filled (indicated by a timestamp >= 0),
-            // AND the timeframe is shorter than the clipping-length, on can return the whole array.
-            if (dataArray[0].last() > 0 &&
-                dataArray[0][0] - dataArray[0].last() < T_lim) {
+            val T_low = T_high - T_clip
 
-                // Reverse the row-order to have the lowest time-value first.
-                return arrayOf(
-                    dataArray[0].slice(dataArray[0].lastIndex downTo 0).toTypedArray(),
-                    dataArray[1].slice(dataArray[0].lastIndex downTo 0).toTypedArray(),
-                    dataArray[2].slice(dataArray[0].lastIndex downTo 0).toTypedArray(),
-                    dataArray[3].slice(dataArray[0].lastIndex downTo 0).toTypedArray(),
-                )
-            }
-
-            // Go through the time-values and find the first one exceeding the given time-limit.
-            // If a "-1" is found beforehand, terminate the loop and return the array until the pre-last
-            // value.
-            var t0_idx = -1;
+            // The lowest value >= T_high is searched. Remember that the array contains
+            // the samples in descending order. (--> The firs row contains the latest sample.)
+            var idx_T_end: Int = -1
             for (k in 0 until N_samples) {
-
-                // If a -1 is found, set the end-index to k-1
+                // Reached a negative time-value --> Too less data in buffer.
                 if (dataArray[0][k] < 0) {
-                    t0_idx = k - 1;
+                    idx_T_end = k - 1
                     break;
                 }
+                if (dataArray[0][k] < T_high) {
+                    idx_T_end = k - 1;
+                    break;
+                }
+            }
 
-                // If the limit-time is exceeded, use set the current row to be the last one in the
-                // returned array.
-                if (tmax - dataArray[0][k] >= T_lim) {
-                    t0_idx = k;
+
+            // The first value <= T_low is searched. Remember that the array contains
+            // the samples in descending order. (--> The firs row contains the latest sample.)
+            var idx_T_start: Int = -1
+            for (k in idx_T_end until N_samples) {
+                // Reached a negative time-value --> Too less data in buffer.
+                if (dataArray[0][k] < 0) {
+                    idx_T_start = k - 1
+                    break;
+                }
+                if (dataArray[0][k] <= T_low) {
+                    idx_T_start = k
+                    break;
+                }
+            }
+
+
+            // Reverse the row-order to have the lowest time-value first.
+            return arrayOf(
+                dataArray[0].slice(idx_T_start downTo idx_T_end).toTypedArray(),
+                dataArray[1].slice(idx_T_start downTo idx_T_end).toTypedArray(),
+                dataArray[2].slice(idx_T_start downTo idx_T_end).toTypedArray(),
+                dataArray[3].slice(idx_T_start downTo idx_T_end).toTypedArray(),
+            )
+        }
+
+        fun clipDataSeriesBackoff(dataArray: Array<Array<Double>>, T_backoff:Double=0.0): Array<Array<Double>> {
+            val T_max = dataArray[0][0]
+
+            // If the array is completely filled, T_lim contains a value >= 0. If not, its value is
+            // <=0. In the latter case, the lowest time-value in the array is searched by iterating
+            // over the timesteps.
+            var T_min: Double = dataArray[0].last()
+            // If T_min < 0 (the last row in the buffer is empty), the variable below holds the
+            // index of the lowest time-value in the buffer.
+            // If T_min >= 0, it simply holds the index of the last element in the buffer.
+            var T_min_idx: Int = -1
+
+            val T_high = T_max - T_backoff
+            var T_high_idx:Int = -1
+
+            var T_low: Double = Double.NaN
+            var T_low_idx:Int = -1
+
+            val N_samples = dataArray[0].size
+
+
+            // Search for the first time-value < T_high.
+            for (k in 0 until N_samples) {
+                // A negative time-value implies that the current and all upcoming rows are unfilled.
+                // --> The array contains too less data. Return empty arrays instead.
+                if (dataArray[0][k] < 0) {
+                    return arrayOf(
+                        Array<Double>(0, init = {Double.NaN}),
+                        Array<Double>(0, init = {Double.NaN}),
+                        Array<Double>(0, init = {Double.NaN}),
+                        Array<Double>(0, init = {Double.NaN}))
+                }
+                // Store the index of the first value <= T_high
+                if (dataArray[0][k] <= T_high) {
+                    T_high_idx = k
+                    break;
+                }
+            }
+
+            // Search for the lowest time-value in the buffer if it is not completely filled
+            if (T_min < 0) {
+                for (k in T_high_idx until N_samples) {
+                    if (dataArray[0][k] < 0) {
+                        T_min_idx = k - 1;
+                        T_min = dataArray[0][T_min_idx]
+                        break;
+                    }
+                }
+            } else {
+                T_min_idx = dataArray[0].lastIndex
+            }
+
+            // If the time-interval contained in the array is large enough, find the indices oof
+            // the corresponding upper and lower boundaries. Otherwise, return an empty array.
+            if (T_max - T_min < 2 * T_backoff) {
+                return arrayOf(
+                    Array<Double>(0, init = { Double.NaN}),
+                    Array<Double>(0, init = { Double.NaN}),
+                    Array<Double>(0, init = { Double.NaN}),
+                    Array<Double>(0, init = { Double.NaN}))
+            }
+
+            T_low = T_min + T_backoff
+            // Iterate from the minimum time-value in direction of increasing values to find the
+            // first time-value above the T_low boundary.
+            for (k in T_min_idx downTo T_high_idx) {
+                if (dataArray[0][k] >= T_low) {
+                    T_low_idx = k
                     break;
                 }
             }
 
             // Reverse the row-order to have the lowest time-value first.
             return arrayOf(
-                dataArray[0].slice(t0_idx downTo 0).toTypedArray(),
-                dataArray[1].slice(t0_idx downTo 0).toTypedArray(),
-                dataArray[2].slice(t0_idx downTo 0).toTypedArray(),
-                dataArray[3].slice(t0_idx downTo 0).toTypedArray(),
+                dataArray[0].slice(T_low_idx downTo T_high_idx).toTypedArray(),
+                dataArray[1].slice(T_low_idx downTo T_high_idx).toTypedArray(),
+                dataArray[2].slice(T_low_idx downTo T_high_idx).toTypedArray(),
+                dataArray[3].slice(T_low_idx downTo T_high_idx).toTypedArray()
             )
         }
 
@@ -714,6 +968,19 @@ class SignalProcessingUtilities {
             }
 
             return arrayOf(x1, x2, x3);
+        }
+
+        fun deepcopySensorDataBuffer(buffer: Array<Array<Double>>): Array<Array<Double>> {
+            val arraySize = buffer[0].size
+
+            val arrayOut: Array<Array<Double>> = arrayOf(
+                Array<Double>(size = arraySize, init = {idx -> buffer[0][idx]}),
+                Array<Double>(size = arraySize, init = {idx -> buffer[1][idx]}),
+                Array<Double>(size = arraySize, init = {idx -> buffer[2][idx]}),
+                Array<Double>(size = arraySize, init = {idx -> buffer[3][idx]})
+            )
+
+            return arrayOut
         }
     }
 }

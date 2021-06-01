@@ -53,4 +53,10 @@
         <item>Laying</item>
         <item>Standing</item>
     </string-array>
+
+    <string-array name="transfer_learning_spinner_entries">
+        <item>Walking</item>
+        <item>Walking Upstairs</item>
+        <item>Walking Downstairs</item>
+    </string-array>
 </resources>

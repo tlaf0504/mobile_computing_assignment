@@ -18,10 +18,11 @@
 
 
     <TableLayout
+        android:id="@+id/activity_probabilities_table"
         android:layout_width="0dp"
-        android:layout_height="0dp"
+        android:layout_height="wrap_content"
         app:layout_constraintBottom_toTopOf="@id/button_transfer_learning_return"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintEnd_toEndOf="@id/tfl_activity_sample_spinner"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
@@ -427,4 +428,45 @@
 
     </TableLayout>
 
+    <TextView
+        android:id="@+id/tfl_activity_sample_spinner_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Select Activity to capture"
+        android:textStyle="bold"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/activity_probabilities_table"
+        android:layout_marginTop="10pt"
+        android:layout_marginStart="16dp"
+        />
+
+    <Spinner
+        android:id="@+id/tfl_activity_sample_spinner"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginTop="16dp"
+        android:background="@android:color/darker_gray"
+        android:popupBackground="@android:color/darker_gray"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tfl_activity_sample_spinner_label"
+        />
+
+    <Switch
+        android:id="@+id/tfl_recording_switch"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tfl_activity_sample_spinner" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintStart_toEndOf="@+id/tfl_recording_switch"
+        app:layout_constraintBaseline_toBaselineOf="@id/tfl_recording_switch"
+        android:layout_marginStart="0pt"
+        android:text="Record" />
 </androidx.constraintlayout.widget.ConstraintLayout>
