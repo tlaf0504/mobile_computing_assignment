@@ -1,3 +1,5 @@
+import os
+import glob
 import numpy as np
 import scipy.signal as sp 
 import scipy.interpolate as interp
@@ -95,6 +97,98 @@ def separate_and_save_testset_timeframes(t:np.ndarray, signals:np.ndarray, frame
         t_frame_end = t_frame_start + frame_width
         frame_idx = frame_idx + 1
 
+
+def load_split_and_store_activity_timeframes(
+    data_source_directory: str, 
+    data_destination_directory: str,
+    T_frame: float,
+    T_overlap: float,
+    gyro_filename_pattern: str = "*gyro*_resampled_clipped.npy"):
+
+    clipped_and_resampled_gyro_data_files = glob.glob(os.path.join(data_source_directory, gyro_filename_pattern))
+    N_files = len(clipped_and_resampled_gyro_data_files)
+
+    print("Found {:d} gyro-files in directory {:s}.".format(N_files, data_source_directory))
+
+    for k in range(N_files):
+        gyro_file = clipped_and_resampled_gyro_data_files[k]
+
+        # Extract the timeframes for one activity-sample
+        __load_split_and_store_activity_timeframes_single(
+            gyro_file,
+            data_destination_directory,
+            T_frame,
+            T_overlap)
+
+
+def __load_split_and_store_activity_timeframes_single(
+    gyro_file: str, 
+    data_destination_directory: str,
+    T_frame: float,
+    T_overlap: float):
+
+    accel_file = gyro_file.replace("gyro", "accel")
+
+    # Load data
+    data_gyro = np.load(gyro_file, allow_pickle=True)
+    data_accel = np.load(accel_file, allow_pickle=True)
+
+
+    # Derive sampling-frequency
+    fs = np.round(1 / (data_gyro[1,0] - data_gyro[0,0]))
+
+    # Number of samples in one timeframe
+    ns_frame = int(np.floor(T_frame * fs))
+
+    # Number of samples in the overlapping area
+    ns_overlap = int(np.floor(T_overlap * fs))
+
+    # Number of samples in the non-overlapping area
+    ns_non_overlap = int(ns_frame - ns_overlap)
+
+    # Number of samples in the gyro- and accerelometer data-arrays. The number of rows of both arrays are forced to be equal in the pre-processing
+    N_data_samples = data_gyro.shape[0]
+    
+    # The total number of timeframes within the current time-series
+    N_frames = int(np.floor(1 + (N_data_samples - ns_frame) / float(ns_non_overlap)))
+
+    # Destination directory is not cleaned up by the script. Do this by hand if wanted.
+    if not os.path.isdir(data_destination_directory):
+        print("Creating directory {:s}".format(data_destination_directory))
+        os.mkdir(data_destination_directory)
         
+    # The the filenames for gyro- and accelerometer files without the ".npy" suffix
+    filename_gyro_no_suffix = os.path.basename(gyro_file)[:-4]
+    filename_accel_no_suffix = os.path.basename(accel_file)[:-4]
+        
+    for k in range(N_frames):
+        idx_start = k * ns_non_overlap
+        idx_end = idx_start + ns_frame - 1
+        
+        timeframe_gyro = data_gyro[idx_start:idx_end+1, :]
+        timeframe_accel = data_accel[idx_start:idx_end+1, :]
+        
+        filename_gyro_timeframe_k = filename_gyro_no_suffix + "_frame_{:d}.npy".format(k)
+        filename_accel_timeframe_k = filename_accel_no_suffix + "_frame_{:d}.npy".format(k)
+        
+        np.save(
+            os.path.join(data_destination_directory, filename_gyro_timeframe_k),
+            timeframe_gyro,
+            allow_pickle=True
+        )
+        
+        np.save(
+            os.path.join(data_destination_directory, filename_accel_timeframe_k),
+            timeframe_accel,
+            allow_pickle=True
+        )
+
+
+
+
+
+
+
+
 
 
