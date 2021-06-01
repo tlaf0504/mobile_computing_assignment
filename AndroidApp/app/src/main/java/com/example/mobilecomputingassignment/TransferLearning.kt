@@ -43,10 +43,10 @@ class TransferLearning : AppCompatActivity(), SensorEventListener, View.OnClickL
 
     /* ========== Sensor-data arrays ========== */
 
-    // Assuming sensor events every 150ms, an sensor-array of length 70 should be long engough
-    // to hold the desired timeframe of 10s. To have enough bachup, an array-length of 100 is
-    // chosen.
-    val arraySize:Int = 100
+    // Assuming a sensor event occurring approximately every 150 ms, the buffer below is able to
+    // hold approximately 150s of data for each activity. This should be far enough for both,
+    // classification and transfer learning.
+    val arraySize:Int = 1000
     val gyroSensorArray = arrayOf(
         Array<Double>(size=arraySize, init={-1.0}),
         Array<Double>(size=arraySize, init={0.0}),
@@ -88,6 +88,8 @@ class TransferLearning : AppCompatActivity(), SensorEventListener, View.OnClickL
         "Lie to Stand"
     )
 
+    val classificationLock = ReentrantLock()
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -104,7 +106,7 @@ class TransferLearning : AppCompatActivity(), SensorEventListener, View.OnClickL
 
         classificationThread = TFLClassificationThread(this);
         classificationTimer = Timer();
-        classificationTimerTask = TFLClassificationTimerTask(classificationThread);
+        classificationTimerTask = TFLClassificationTimerTask(classificationThread, this);
 
         classificationThread.start()
     }
@@ -179,12 +181,23 @@ class TransferLearning : AppCompatActivity(), SensorEventListener, View.OnClickL
         val N_columns: Int = buffer.size
         val N_entries: Int = buffer[0].size
 
-        for (k in N_entries - 1 downTo 1) {
+
+        // Get the number of non-empty rows
+        var N_filled_entries: Int = 0
+        for (k in 0 until N_entries) {
+            if (buffer[0][k] < 0) {
+                N_filled_entries = k
+                break;
+            }
+        }
+
+        for (k in N_filled_entries downTo 1) {
             for (l in 0 until N_columns) {
                 buffer[l][k] = buffer[l][k - 1]
             }
         }
 
+        // Finally, fill the current row with NANs
         for (l in 0 until N_columns) {
             buffer[l][0] = Double.NaN
         }
@@ -195,6 +208,20 @@ class TransferLearning : AppCompatActivity(), SensorEventListener, View.OnClickL
         for (k in 0 until values.size) {
             buffer[k][0] = values[k];
         }
+    }
+
+    // This method is NOT thread-safe!
+    private fun flushSensorDataBuffers() {
+
+        gyroSensorArray[0].fill(-1.0)
+        gyroSensorArray[1].fill(0.0)
+        gyroSensorArray[2].fill(0.0)
+        gyroSensorArray[3].fill(0.0)
+
+        accelSensorArray[0].fill(-1.0)
+        accelSensorArray[1].fill(0.0)
+        accelSensorArray[2].fill(0.0)
+        accelSensorArray[3].fill(0.0)
     }
 
     fun probabilityUpdateHandlerCallback(msg: Message):Boolean {
@@ -224,6 +251,20 @@ class TransferLearning : AppCompatActivity(), SensorEventListener, View.OnClickL
 
             val str_id_right = resources.getIdentifier("activity_%d_right_val".format(k+1), "string", packageName)
             tw_right.text = resources.getString(str_id_right, values[1][k])
+        }
+    }
+
+    fun acquireTransferLearningActivitySamples(activityLabel: Int) {
+        // Interrupt data-acquisition
+        writeDataLock.lock()
+        try {
+            // Clean up sensor data buffers
+            flushSensorDataBuffers()
+
+
+
+        } finally {
+            writeDataLock.unlock()
         }
     }
 
@@ -412,8 +453,8 @@ constructor(val activityThread: TransferLearning) : Thread() {
                              fs:Double=100.0,
                              Ns:Int = -1): Array<Array<Array<Double>>> {
 
-        val gyroSensorDataResampled = resampleTimeSeries(gyroSensorData, fs=fs, N_samples_out = Ns)
-        val accelSensorDataResampled = resampleTimeSeries(accelSensorData, fs=fs, N_samples_out = Ns)
+        val gyroSensorDataResampled = SignalProcessingUtilities.resampleTimeSeries(gyroSensorData, fs=fs, N_samples_out = Ns)
+        val accelSensorDataResampled = SignalProcessingUtilities.resampleTimeSeries(accelSensorData, fs=fs, N_samples_out = Ns)
 
         return arrayOf(gyroSensorDataResampled, accelSensorDataResampled)
     }
@@ -445,115 +486,12 @@ constructor(val activityThread: TransferLearning) : Thread() {
         gyroSensorData: Array<Array<Double>>,
         accelSensorData: Array<Array<Double>>,
         T_lim:Double=10.0): Array<Array<Array<Double>>> {
-        val clippedGyroData = clipDataSeries(gyroSensorData, T_lim=T_lim);
-        val clippedAccelData = clipDataSeries(accelSensorData, T_lim=T_lim);
+        val clippedGyroData = SignalProcessingUtilities.clipDataSeries(gyroSensorData, T_lim=T_lim);
+        val clippedAccelData = SignalProcessingUtilities.clipDataSeries(accelSensorData, T_lim=T_lim);
 
         return arrayOf(
             clippedGyroData,
             clippedAccelData)
-    }
-
-    private fun clipDataSeries(dataArray: Array<Array<Double>>, T_lim:Double=10.0): Array<Array<Double>> {
-        val tmax = dataArray[0][0];
-        val N_samples = dataArray[0].size
-
-        // If the last row in the array is filled (indicated by a timestamp >= 0),
-        // AND the timeframe is shorter than the clipping-length, on can return the whole array.
-        if (dataArray[0].last() > 0 &&
-            dataArray[0][0] - dataArray[0].last() < T_lim) {
-
-            // Reverse the row-order to have the lowest time-value first.
-            return arrayOf(
-                dataArray[0].slice(dataArray[0].lastIndex downTo 0).toTypedArray(),
-                dataArray[1].slice(dataArray[0].lastIndex downTo 0).toTypedArray(),
-                dataArray[2].slice(dataArray[0].lastIndex downTo 0).toTypedArray(),
-                dataArray[3].slice(dataArray[0].lastIndex downTo 0).toTypedArray(),
-            )
-        }
-
-        // Go through the time-values and find the first one exceeding the given time-limit.
-        // If a "-1" is found beforehand, terminate the loop and return the array until the pre-last
-        // value.
-        var t0_idx = -1;
-        for (k in 0 until N_samples) {
-
-            // If a -1 is found, set the end-index to k-1
-            if (dataArray[0][k] < 0) {
-                t0_idx = k - 1;
-                break;
-            }
-
-            // If the limit-time is exceeded, use set the current row to be the last one in the
-            // returned array.
-            if (tmax - dataArray[0][k] >= T_lim) {
-                t0_idx = k;
-                break;
-            }
-        }
-
-        // Reverse the row-order to have the lowest time-value first.
-        return arrayOf(
-            dataArray[0].slice(t0_idx downTo 0).toTypedArray(),
-            dataArray[1].slice(t0_idx downTo 0).toTypedArray(),
-            dataArray[2].slice(t0_idx downTo 0).toTypedArray(),
-            dataArray[3].slice(t0_idx downTo 0).toTypedArray(),
-        )
-    }
-
-    private fun resampleTimeSeries(dataArray: Array<Array<Double>>,
-                                   fs:Double=100.0,
-                                   N_samples_out:Int = -1): Array<Array<Double>> {
-        val t_old = dataArray[0]
-        val t0 = t_old[0]
-        val t_new = t_old.map { tk -> tk - t0 };
-
-        var __N_samples_out: Int = -1
-        if (N_samples_out > 0) {
-            __N_samples_out = N_samples_out
-        } else {
-            __N_samples_out = (t_new[t_new.size - 1]* fs).toInt();
-        }
-
-        val x1 = Array<Double>(size=__N_samples_out, init={0.0});
-        val x2 = Array<Double>(size=__N_samples_out, init={0.0});
-        val x3 = Array<Double>(size=__N_samples_out, init={0.0});
-
-        var i: Int = 0;
-
-        for (k: Int in 0 until __N_samples_out - 1) {
-
-            val tk = k / fs;
-
-            if (tk > t_new[i + 1]) {
-                i++;
-            }
-
-            val ti = t_new[i];
-            // Interpolate
-            val tip1 = t_new[i + 1];
-
-            val x1_i = dataArray[1][i];
-            val x1_ip1 = dataArray[1][i + 1];
-
-            val x2_i = dataArray[2][i];
-            val x2_ip1 = dataArray[2][i + 1];
-
-            val x3_i = dataArray[3][i];
-            val x3_ip1 = dataArray[3][i + 1];
-
-
-            /* >>===== Linear interpolation for time-point tk between time-points ti and tip1 */
-
-            // Compute this value only once, as it is required for all three data-channels.
-            val delta_t = (tk - ti) / (tip1 - ti);
-
-            x1[k] = (x1_ip1 - x1_i) * delta_t + x1_i;
-            x2[k] = (x2_ip1 - x2_i) * delta_t + x2_i;
-            x3[k] = (x3_ip1 - x3_i) * delta_t + x3_i;
-            /* <<===== */
-        }
-
-        return arrayOf(x1, x2, x3);
     }
 
     private fun deepcopySensorDataBuffer(buffer: Array<Array<Double>>): Array<Array<Double>> {
@@ -648,15 +586,20 @@ constructor(val activityThread: TransferLearning) : Thread() {
 }
 
 class TFLClassificationTimerTask
-constructor(val classificationObject: TFLClassificationThread): TimerTask() {
+constructor(val classificationObject: TFLClassificationThread, val activityThread: TransferLearning): TimerTask() {
 
     override fun run() {
-        // Trigger the classification
-        classificationObject.synchronizationLock.lock()
-        try {
-            classificationObject.synchronizationCondition.signal()
-        } finally {
-            classificationObject.synchronizationLock.unlock()
+
+        // The activitie's main-thread acquires the lock below to lock the classification process.
+        if (activityThread.classificationLock.tryLock()) {
+            // Trigger the classification
+            classificationObject.synchronizationLock.lock()
+            try {
+                classificationObject.synchronizationCondition.signal()
+            } finally {
+                classificationObject.synchronizationLock.unlock()
+                activityThread.classificationLock.unlock()
+            }
         }
     }
 }
@@ -666,6 +609,111 @@ class TestSetSample
                 val accelSensorData: Array<Array<Double>>,
                 val label:Int,
                 val filename: String) {
+}
 
+class SignalProcessingUtilities {
+    companion object {
+        fun clipDataSeries(dataArray: Array<Array<Double>>, T_lim:Double=10.0): Array<Array<Double>> {
+            val tmax = dataArray[0][0];
+            val N_samples = dataArray[0].size
+
+            // If the last row in the array is filled (indicated by a timestamp >= 0),
+            // AND the timeframe is shorter than the clipping-length, on can return the whole array.
+            if (dataArray[0].last() > 0 &&
+                dataArray[0][0] - dataArray[0].last() < T_lim) {
+
+                // Reverse the row-order to have the lowest time-value first.
+                return arrayOf(
+                    dataArray[0].slice(dataArray[0].lastIndex downTo 0).toTypedArray(),
+                    dataArray[1].slice(dataArray[0].lastIndex downTo 0).toTypedArray(),
+                    dataArray[2].slice(dataArray[0].lastIndex downTo 0).toTypedArray(),
+                    dataArray[3].slice(dataArray[0].lastIndex downTo 0).toTypedArray(),
+                )
+            }
+
+            // Go through the time-values and find the first one exceeding the given time-limit.
+            // If a "-1" is found beforehand, terminate the loop and return the array until the pre-last
+            // value.
+            var t0_idx = -1;
+            for (k in 0 until N_samples) {
+
+                // If a -1 is found, set the end-index to k-1
+                if (dataArray[0][k] < 0) {
+                    t0_idx = k - 1;
+                    break;
+                }
+
+                // If the limit-time is exceeded, use set the current row to be the last one in the
+                // returned array.
+                if (tmax - dataArray[0][k] >= T_lim) {
+                    t0_idx = k;
+                    break;
+                }
+            }
+
+            // Reverse the row-order to have the lowest time-value first.
+            return arrayOf(
+                dataArray[0].slice(t0_idx downTo 0).toTypedArray(),
+                dataArray[1].slice(t0_idx downTo 0).toTypedArray(),
+                dataArray[2].slice(t0_idx downTo 0).toTypedArray(),
+                dataArray[3].slice(t0_idx downTo 0).toTypedArray(),
+            )
+        }
+
+        fun resampleTimeSeries(dataArray: Array<Array<Double>>,
+                               fs:Double=100.0,
+                               N_samples_out:Int = -1): Array<Array<Double>> {
+            val t_old = dataArray[0]
+            val t0 = t_old[0]
+            val t_new = t_old.map { tk -> tk - t0 };
+
+            var __N_samples_out: Int = -1
+            if (N_samples_out > 0) {
+                __N_samples_out = N_samples_out
+            } else {
+                __N_samples_out = (t_new[t_new.size - 1]* fs).toInt();
+            }
+
+            val x1 = Array<Double>(size=__N_samples_out, init={0.0});
+            val x2 = Array<Double>(size=__N_samples_out, init={0.0});
+            val x3 = Array<Double>(size=__N_samples_out, init={0.0});
+
+            var i: Int = 0;
+
+            for (k: Int in 0 until __N_samples_out - 1) {
+
+                val tk = k / fs;
+
+                if (tk > t_new[i + 1]) {
+                    i++;
+                }
+
+                val ti = t_new[i];
+                // Interpolate
+                val tip1 = t_new[i + 1];
+
+                val x1_i = dataArray[1][i];
+                val x1_ip1 = dataArray[1][i + 1];
+
+                val x2_i = dataArray[2][i];
+                val x2_ip1 = dataArray[2][i + 1];
+
+                val x3_i = dataArray[3][i];
+                val x3_ip1 = dataArray[3][i + 1];
+
+
+                /* >>===== Linear interpolation for time-point tk between time-points ti and tip1 */
+
+                // Compute this value only once, as it is required for all three data-channels.
+                val delta_t = (tk - ti) / (tip1 - ti);
+
+                x1[k] = (x1_ip1 - x1_i) * delta_t + x1_i;
+                x2[k] = (x2_ip1 - x2_i) * delta_t + x2_i;
+                x3[k] = (x3_ip1 - x3_i) * delta_t + x3_i;
+                /* <<===== */
+            }
+
+            return arrayOf(x1, x2, x3);
+        }
     }
-
+}
