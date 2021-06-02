@@ -40,6 +40,8 @@
     <string name="classified_activity_left_val">%s</string>
     <string name="classified_activity_right_val">%s</string>
 
+    <string name="loss_label_val">Loss: %f</string>
+
     <string-array name="activity_selection_spinner_entries">
         <item>Push-Ups</item>
         <item>Crunches</item>

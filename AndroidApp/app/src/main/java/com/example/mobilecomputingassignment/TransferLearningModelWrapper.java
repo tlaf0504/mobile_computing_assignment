@@ -49,15 +49,13 @@ public class TransferLearningModelWrapper implements Closeable {
     model =
         new TransferLearningModel(
             new AssetModelLoader(context, "model_transfer_learning"), Arrays.asList(
-                    "WALKING", "WALKING_UPSTAIRS", "WALKING_DOWNSTAIRS", "SITTING",
-                    "STANDING", "LAYING", "STAND_TO_SIT", "SIT_TO_STAND", "SIT_TO_LIE",
-                    "LIE_TO_SIT", "STAND_TO_LIE", "LIE_TO_STAND"));
+                    "WALKING", "WALKING_UPSTAIRS", "WALKING_DOWNSTAIRS"));
 
     new Thread(() -> {
       while (!Thread.interrupted()) {
         shouldTrain.block();
         try {
-          model.train(1, lossConsumer).get();
+          model.train(20, lossConsumer).get();
         } catch (ExecutionException e) {
           throw new RuntimeException("Exception occurred during model training", e.getCause());
         } catch (InterruptedException e) {

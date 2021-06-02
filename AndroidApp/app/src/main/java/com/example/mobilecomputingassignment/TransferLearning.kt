@@ -1,31 +1,25 @@
 package com.example.mobilecomputingassignment
 
+import android.content.Context
+import android.content.DialogInterface
 import android.content.Intent
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Handler
 import android.os.Message
 import android.view.View
 import android.widget.*
-import org.tensorflow.lite.Interpreter
-import org.tensorflow.lite.examples.transfer.api.TransferLearningModel
-import org.tensorflow.lite.examples.transfer.api.AssetModelLoader
-import org.tensorflow.lite.examples.transfer.api.TransferLearningModel.LossConsumer
-import org.tensorflow.lite.examples.transfer.api.TransferLearningModel.Prediction
+import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.app.AppCompatActivity
 import com.example.mobilecomputingassignment.ml.ConvertedModel
 import org.tensorflow.lite.DataType
-import org.tensorflow.lite.Tensor
-import org.tensorflow.lite.support.common.FileUtil
 import org.tensorflow.lite.support.tensorbuffer.TensorBuffer
 import org.w3c.dom.Text
 import java.io.InputStream
-import java.lang.NumberFormatException
-import java.nio.ByteBuffer
-import java.nio.MappedByteBuffer
+import java.text.DateFormat
 import java.util.*
 import java.util.concurrent.locks.ReentrantLock
 
@@ -44,11 +38,19 @@ class TransferLearning : AppCompatActivity(),
     private lateinit var classificationTimerTask: TFLClassificationTimerTask;
     private lateinit var tflDataCapturingThread: TFLDataCapturingThread;
     private lateinit var bReturnToMainButton: Button;
+    private lateinit var startTransferLearningButton: Button;
+    private lateinit var bDebug: Button;
     private lateinit var spActivitySelectionSpinner: Spinner;
+    private lateinit var lossTextView: TextView;
+
+    var tflActivitySpinnerSelectedItemString: String = "Walking";
+    var tflActivitySpinnerSelectedItemPos: Int = 0;
 
     private lateinit var captureDataSwitch: Switch;
     private var captureDataSwitchState:Boolean = false;
     private var captureDataSwitchStateLock = ReentrantLock()
+
+    private var learningButtonState:Int = 0
 
     /* ========== Sensor-data arrays ========== */
 
@@ -62,7 +64,6 @@ class TransferLearning : AppCompatActivity(),
         Array<Double>(size=arraySize, init={0.0}),
         Array<Double>(size=arraySize, init={0.0})
     );
-
     val accelSensorArray = arrayOf(
         Array<Double>(size=arraySize, init={-1.0}),
         Array<Double>(size=arraySize, init={0.0}),
@@ -70,23 +71,31 @@ class TransferLearning : AppCompatActivity(),
         Array<Double>(size=arraySize, init={0.0})
     );
 
+    // Arrays for storing the transfer-learning samples
+    lateinit var walkingTransferLearningSamples: Array<Array<Array<Double>>>;
+    lateinit var walkingDownstairsLearningSamples: Array<Array<Array<Double>>>;
+    lateinit var walkingUpstairsTransferLearningSamples: Array<Array<Array<Double>>>;
 
+    // After capturing samples for one activity, the corresponding timestamp in milliseconds will be
+    // stored here. See https://developer.android.com/reference/java/util/Date#getTime() for further
+    // information.
+    val transferLearningSampleCounts: Array<Int> = arrayOf(-1,-1,-1)
+
+    lateinit var transferLearningModel: TransferLearningModelWrapper;
+
+
+    //Handler triggered after model-inference
     lateinit var probabilityUpdateHandler: Handler;
+    // Handler triggered after capturing transfer-learning samples for one activity
+    lateinit var transferLearningActivitySamplingFinishedHandler: Handler;
+    // Handler triggered after transfer-learning has completed
+    lateinit var transferLearningFinishedUpdateHandler: Handler;
+    // Handler triggered by the "LEARN"-button
+    lateinit var doTransferLearningHandler: Handler;
+    lateinit var printLearningEpochHandler: Handler;
+    lateinit var debugHandler: Handler;
 
-    val activity_labels: Array<String> = arrayOf(
-        "Walking",
-        "Walking Upstairs",
-        "Walking Downstairs",
-        "Sitting",
-        "Standing",
-        "Laying",
-        "Stand to Sit",
-        "Sit to Stand",
-        "Sit to Lie",
-        "Lie to Sit",
-        "Stand to Lie",
-        "Lie to Stand"
-    )
+    lateinit var activity_labels: Array<String>;
 
     // A lock acquired while writing data to the sensor-data arrays.
     // Acquire to lock data capturing.
@@ -104,7 +113,7 @@ class TransferLearning : AppCompatActivity(),
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_transfer_learning)
 
-
+        activity_labels = resources.getStringArray(R.array.transfer_learning_spinner_entries)
         /* Initialization-code taken from
          * https://developer.android.com/guide/topics/ui/controls/spinner (2021-04-07)
          */
@@ -122,12 +131,23 @@ class TransferLearning : AppCompatActivity(),
 
 
         probabilityUpdateHandler = Handler(mainLooper, Handler.Callback { msg -> probabilityUpdateHandlerCallback(msg) })
+        transferLearningActivitySamplingFinishedHandler =
+            Handler(mainLooper, Handler.Callback { msg -> transferLearningActivitySamplingFinishedHandlerCallback(msg) })
+        transferLearningFinishedUpdateHandler =
+            Handler(mainLooper, Handler.Callback { msg -> transferLearningFinishedUpdateHandlerCallback(msg) })
+        doTransferLearningHandler = Handler(mainLooper, Handler.Callback { msg -> doTransferLearningHandlerCallback(msg) })
+        printLearningEpochHandler = Handler(mainLooper, Handler.Callback { msg -> printLearningLossHandlerCallback(msg) })
+        debugHandler = Handler(mainLooper, Handler.Callback { msg -> debugButtonCallback(msg) })
 
         bReturnToMainButton = findViewById(R.id.button_transfer_learning_return);
         bReturnToMainButton.setOnClickListener(this)
-
+        startTransferLearningButton = findViewById(R.id.tfl_start_learning)
+        startTransferLearningButton.setOnClickListener(this)
         captureDataSwitch = findViewById(R.id.tfl_recording_switch)
         captureDataSwitch.setOnCheckedChangeListener(this)
+        bDebug = findViewById(R.id.tfl_debug)
+        bDebug.setOnClickListener(this)
+        lossTextView = findViewById(R.id.loss_value)
 
         sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager;
         gyroSensor = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
@@ -142,6 +162,9 @@ class TransferLearning : AppCompatActivity(),
         tflDataCapturingThread = TFLDataCapturingThread(this)
         tflDataCapturingThread.start()
 
+        initUI()
+
+        transferLearningModel = TransferLearningModelWrapper(this)
 
     }
 
@@ -244,6 +267,33 @@ class TransferLearning : AppCompatActivity(),
         }
     }
 
+    private fun initUI() {
+
+        // Set inference elements
+        val activities: Array<Int> = arrayOf(0,1,2)
+        val values: Array<Array<Double>> = arrayOf(
+            Array<Double>(activities.size, init = {0.0}),
+            Array<Double>(activities.size, init = {0.0}))
+
+        setActivityProbabilities(activities, values)
+
+        // Set transfer-learning elements
+        setTransferLearningActivitySamplingStats(0,0)
+        setTransferLearningActivitySamplingStats(1,0)
+        setTransferLearningActivitySamplingStats(2,0)
+
+        // Set the time-strings to "Never"
+        for (k in 0..2) {
+            val tw_id_center: Int = resources.getIdentifier("tfl_timestamps_%d_center".format(k + 1), "id", packageName)
+            val tw_center: TextView = findViewById(tw_id_center)
+
+            tw_center.text = "Never"
+        }
+        
+        updateLossValue(Double.NaN)
+        startTransferLearningButton.text="Start Learning"
+    }
+
     // This method is NOT thread-safe!
     fun flushSensorDataBuffers() {
 
@@ -261,6 +311,44 @@ class TransferLearning : AppCompatActivity(),
     fun probabilityUpdateHandlerCallback(msg: Message):Boolean {
         val msg_converted = msg.obj as Pair<Array<Int>, Array<Array<Double>>>
         setActivityProbabilities(msg_converted.first, msg_converted.second)
+        return true
+    }
+
+    fun transferLearningActivitySamplingFinishedHandlerCallback(msg: Message): Boolean {
+        val (id, N_Samples) = msg.obj as Pair<Int, Int>
+        setTransferLearningActivitySamplingStats(id, N_Samples)
+        return true
+    }
+
+    fun transferLearningFinishedUpdateHandlerCallback(msg: Message): Boolean {
+        return true
+    }
+
+    fun doTransferLearningHandlerCallback(msg: Message): Boolean {
+        if (learningButtonState == 0) {
+            val ret = doTransferLearning()
+            if (ret == 0) {
+                startTransferLearningButton.text = "Stop Learning"
+                learningButtonState = 1
+            }
+        } else if (learningButtonState == 1) {
+            quitTransferLearning()
+            startTransferLearningButton.text="Start Learning"
+            learningButtonState=0
+        }
+        
+        return true
+    }
+
+    fun printLearningLossHandlerCallback(msg: Message): Boolean {
+        val msg_converted = msg.obj as Pair<Int, Float>
+        print("\tEpoch %d: Loss = %f\n".format(msg_converted.first, msg_converted.second))
+        lossTextView.text = resources.getString(R.string.loss_label_val, msg_converted.second)
+        return true
+    }
+
+    fun debugButtonCallback(msg: Message): Boolean {
+        debug()
         return true
     }
 
@@ -288,6 +376,18 @@ class TransferLearning : AppCompatActivity(),
         }
     }
 
+    fun setTransferLearningActivitySamplingStats(id:Int, N_Samples:Int) {
+        val tw_id_center: Int = resources.getIdentifier("tfl_timestamps_%d_center".format(id + 1), "id", packageName)
+        val tw_center: TextView = findViewById(tw_id_center)
+
+        val tw_id_right: Int = resources.getIdentifier("tfl_timestamps_%d_right".format(id + 1), "id", packageName)
+        val tw_right: TextView = findViewById(tw_id_right)
+
+        val date = Calendar.getInstance().time
+        tw_center.text = DateFormat.getTimeInstance(DateFormat.SHORT).format(date)
+        tw_right.text = N_Samples.toString()
+    }
+
     fun getTransferLearningDataCapturingSwitchState(): Boolean {
         var state = false
         captureDataSwitchStateLock.lock()
@@ -298,10 +398,83 @@ class TransferLearning : AppCompatActivity(),
         }
         return state
     }
+
+    fun doTransferLearning(): Int {
+        if (!transferLearningSampleCounts.all { element -> element > 0 }) {
+            showAlert("You have to provide samples for all activities.", this)
+            return - 1
+        }
+
+        print("Adding samples...\n")
+        addTransferLearningSamplesToModel(walkingTransferLearningSamples, "WALKING")
+        addTransferLearningSamplesToModel(walkingUpstairsTransferLearningSamples, "WALKING_UPSTAIRS")
+        addTransferLearningSamplesToModel(walkingDownstairsLearningSamples, "WALKING_DOWNSTAIRS")
+        print("Starting training...\n")
+        transferLearningModel.enableTraining { epoch, loss ->  printLearningLoss(epoch, loss)}
+
+        return 0
+    }
+    
+    fun quitTransferLearning() {
+        transferLearningModel.disableTraining()
+    }
+
+    fun printLearningLoss(epoch:Int, loss:Float) {
+        val msg = Message()
+        msg.obj = Pair(epoch, loss)
+        printLearningEpochHandler.sendMessage(msg)
+    }
+
+    fun addTransferLearningSamplesToModel(dataArray: Array<Array<Array<Double>>>, label: String) {
+        val N_samples = dataArray.size
+        for (k in 0 until N_samples) {
+            print("\tAdding Sample %d of %d for activity %s\n".format(k, N_samples, label))
+            val reshapedData = reshapeSampleData(dataArray[k])
+            transferLearningModel.addSample(reshapedData, label)
+        }
+    }
+
+    fun reshapeSampleData(sampleData: Array<Array<Double>>): FloatArray {
+        val N_samples: Int = sampleData[0].size
+        val N_columns: Int = 6
+
+        val out_array = FloatArray(N_samples * 6, init = {0.0F})
+        for (k in 0 until N_samples) {
+            for (l in 0 until N_columns) {
+                val idx = k * N_columns + l
+                out_array[idx] = sampleData[l][k].toFloat()
+            }
+        }
+        return out_array
+    }
+
+    fun showAlert(message:String, context: Context, title: String="Alert") {
+        val builder = AlertDialog.Builder(context)
+        builder.setMessage(message)
+        builder.setTitle("Alert")
+        builder.setNeutralButton("Ok",
+            DialogInterface.OnClickListener { dialog, id ->
+                dialog.dismiss()
+            })
+
+        val dialog = builder.create()
+        dialog.show()
+    }
+    
+    fun updateLossValue(loss:Double) {
+        lossTextView.text = resources.getString(R.string.loss_label_val, loss)
+    }
+
     override fun onClick(v: View?) {
-        if (v?.id == this.bReturnToMainButton.id) {
+        if (v?.id == bReturnToMainButton.id) {
             val intent = Intent(this, MainActivity::class.java);
             startActivity(intent);
+        } else if (v?.id == startTransferLearningButton.id) {
+            val msg = Message()
+            doTransferLearningHandler.sendMessage(msg)
+        } else if (v?.id == bDebug.id) {
+            val msg = Message()
+            debugHandler.sendMessage(msg)
         }
     }
 
@@ -311,6 +484,8 @@ class TransferLearning : AppCompatActivity(),
         // An item was selected. You can retrieve the selected item using
         // parent.getItemAtPosition(pos)
         val selected_item = parent.getItemAtPosition(pos)
+        tflActivitySpinnerSelectedItemPos = pos
+        tflActivitySpinnerSelectedItemString = selected_item.toString()
     }
 
     // Must be implemented by class for AdapterView.OnItemSelectedListener
@@ -336,11 +511,124 @@ class TransferLearning : AppCompatActivity(),
             }
         }
     }
+
+    fun debug() {
+
+        val training_set = debugLoadTrainingSet()
+        debugAddTrainingSamples(training_set)
+        transferLearningModel.enableTraining { epoch, loss ->  printLearningLoss(epoch, loss)}
+
+    }
+
+    fun debugLoadTrainingSet(): MutableList<TestSetSample> {
+        val testSetFiles = assets.list("transfer_learning_device_dataset/training_set")
+        val NTestsetFiles:Int = testSetFiles?.size ?: 0
+
+        val testSetData = mutableListOf<TestSetSample>()
+        for (k in 0 until NTestsetFiles) {
+            val sample_filename:String = testSetFiles?.get(k)?: ""
+            val sample_stream = assets.open("transfer_learning_device_dataset/training_set/%s".format(sample_filename))
+            testSetData.add(
+                TFLClassificationThread.loadTestsetSample(
+                    sample_stream,
+                    sample_filename
+                )
+            )
+        }
+        return testSetData
+    }
+
+    fun debugAddTrainingSamples(samples: MutableList<TestSetSample>) {
+        val labels = arrayOf("WALKING", "WALKING_UPSTAIRS", "WALKING_DOWNSTAIRS")
+        val N_samples = samples.size
+        for (k in 0 until N_samples) {
+            val label = labels[samples[k].label]
+            print("\tAdding Sample %d of %d for activity %s\n".format(k, N_samples, label))
+
+            val data = arrayOf(
+                samples[k].gyroSensorData[0],
+                samples[k].gyroSensorData[1],
+                samples[k].gyroSensorData[2],
+                samples[k].accelSensorData[0],
+                samples[k].accelSensorData[1],
+                samples[k].accelSensorData[2])
+
+            val reshapedData = reshapeSampleData(data)
+            transferLearningModel.addSample(reshapedData, label)
+            transferLearningSampleCounts[samples[k].label]++
+        }
+    }
 }
 
 
 class TFLClassificationThread
 constructor(val activityThread: TransferLearning): Thread() {
+    companion object {
+        fun loadTestsetSample(stream: InputStream, filename:String, delimiter:String=";"): TestSetSample {
+
+            // Read data in CSV-format from given input-stream
+            val data: MutableList<Array<Double>> = mutableListOf();
+            val reader = stream.bufferedReader()
+            var line: String? = reader.readLine();
+            while (line != null) {
+                val tokens = line.split(";")
+                try {
+                    val tmp = arrayOf<Double>(
+                        tokens[0].toDouble(), // Gyro X
+                        tokens[1].toDouble(), // Gyro Y
+                        tokens[2].toDouble(), // Gyro Z
+                        tokens[3].toDouble(), // Accel X
+                        tokens[4].toDouble(), // Accel Y
+                        tokens[5].toDouble()  // Accel Z
+                    )
+                    data.add(element = tmp);
+
+                } catch (e: NumberFormatException) {}
+                line = reader.readLine()
+            }
+            reader.close()
+
+            val N_samples = data.size
+            val dataArray: Array<Array<Double>> = arrayOf(
+                Array<Double>(N_samples, init = {0.0}),
+                Array<Double>(N_samples, init = {0.0}),
+                Array<Double>(N_samples, init = {0.0}),
+                Array<Double>(N_samples, init = {0.0}),
+                Array<Double>(N_samples, init = {0.0}),
+                Array<Double>(N_samples, init = {0.0})
+            )
+
+            // Convert from row-indices first to column-indices first, to match the required data-format
+            for (k in 0 until N_samples) {
+                dataArray[0][k] = data[k][0]
+                dataArray[1][k] = data[k][1]
+                dataArray[2][k] = data[k][2]
+                dataArray[3][k] = data[k][3]
+                dataArray[4][k] = data[k][4]
+                dataArray[5][k] = data[k][5]
+            }
+
+
+            // Extract activity label from filename
+            val re = "activity_[0-9]+".toRegex()
+            val match = re.find(filename)?.value ?: ""
+            val label_match = "[0-9]+".toRegex().find(match)?.value ?: "-1"
+            val label = label_match.toInt()
+
+            val gyroSensorData = arrayOf(
+                dataArray[0],
+                dataArray[1],
+                dataArray[2])
+
+            val accelSensorData = arrayOf(
+                dataArray[3],
+                dataArray[4],
+                dataArray[5])
+
+
+            return TestSetSample(gyroSensorData, accelSensorData, label, filename)
+        }
+    }
 
     val TEST:Boolean = false
     lateinit var testSetData: MutableList<TestSetSample>;
@@ -358,7 +646,6 @@ constructor(val activityThread: TransferLearning): Thread() {
 
     // Set this to true to terminate the thread.
     var terminateThread: Boolean = false;
-    private val sampling_frequency: Double = 100.0;
 
     override fun run() {
         pretrainedModel = ConvertedModel.newInstance(activityThread)
@@ -569,89 +856,38 @@ constructor(val activityThread: TransferLearning): Thread() {
         return testSetData
     }
 
-    private fun loadTestsetSample(stream: InputStream, filename:String, delimiter:String=";"): TestSetSample {
 
-        // Read data in CSV-format from given input-stream
-        val data: MutableList<Array<Double>> = mutableListOf();
-        val reader = stream.bufferedReader()
-        var line: String? = reader.readLine();
-        while (line != null) {
-            val tokens = line.split(";")
-            try {
-                val tmp = arrayOf<Double>(
-                    tokens[0].toDouble(), // Gyro X
-                    tokens[1].toDouble(), // Gyro Y
-                    tokens[2].toDouble(), // Gyro Z
-                    tokens[3].toDouble(), // Accel X
-                    tokens[4].toDouble(), // Accel Y
-                    tokens[5].toDouble()  // Accel Z
-                )
-                data.add(element = tmp);
-
-            } catch (e: NumberFormatException) {}
-            line = reader.readLine()
-        }
-        reader.close()
-
-        val N_samples = data.size
-        val dataArray: Array<Array<Double>> = arrayOf(
-            Array<Double>(N_samples, init = {0.0}),
-            Array<Double>(N_samples, init = {0.0}),
-            Array<Double>(N_samples, init = {0.0}),
-            Array<Double>(N_samples, init = {0.0}),
-            Array<Double>(N_samples, init = {0.0}),
-            Array<Double>(N_samples, init = {0.0})
-        )
-
-        // Convert from row-indices first to column-indices first, to match the required data-format
-        for (k in 0 until N_samples) {
-            dataArray[0][k] = data[k][0]
-            dataArray[1][k] = data[k][1]
-            dataArray[2][k] = data[k][2]
-            dataArray[3][k] = data[k][3]
-            dataArray[4][k] = data[k][4]
-            dataArray[5][k] = data[k][5]
-        }
-
-
-        // Extract activity label from filename
-        val re = "activity_[0-9]+".toRegex()
-        val match = re.find(filename)?.value ?: ""
-        val label_match = "[0-9]+".toRegex().find(match)?.value ?: "-1"
-        val label = label_match.toInt()
-
-        val gyroSensorData = arrayOf(
-            dataArray[0],
-            dataArray[1],
-            dataArray[2])
-
-        val accelSensorData = arrayOf(
-            dataArray[3],
-            dataArray[4],
-            dataArray[5])
-
-
-         return TestSetSample(gyroSensorData, accelSensorData, label, filename)
-    }
 }
 
 class TFLDataCapturingThread
 constructor(val activityThread: TransferLearning): Thread() {
     override fun run() {
+        var currentActivityIndex: Int = 0
 
-        waitUntilDataCaptureEnabled()
-        flushSensorDataBuffers()
-        waitUntilDataCaptureDisabled()
+        while(true) {
+            // Wait until the user starts capturing the activity
+            waitUntilDataCaptureEnabled()
+            // Get the index of the currently selected activity to be captured
+            currentActivityIndex = activityThread.tflActivitySpinnerSelectedItemPos
+            // Clean up the sensor-data buffers
+            flushSensorDataBuffers()
+            // Wait until the user has finished the activity
+            waitUntilDataCaptureDisabled()
 
-        // When locked, toggling the UI-button has not effect, except on its state-variable in the
-        // activity-thread
-        activityThread.transferLearningDataCapturingLock.lock()
-        try {
-            // Deepcopy the current values from the sensor-data buffers in a thread-save way
-            val (gyroSensorData, accelSensorData) = copyBuffers()
-            doProcessing(gyroSensorData, accelSensorData)
-        } finally {
-            activityThread.transferLearningDataCapturingLock.unlock()
+            // When locked, toggling the UI-button has not effect, except on its state-variable in the
+            // activity-thread
+            activityThread.transferLearningDataCapturingLock.lock()
+            try {
+                // Deepcopy the current values from the sensor-data buffers in a thread-save way
+                val (gyroSensorData, accelSensorData) = copyBuffers()
+                val activitySamples = doProcessing(gyroSensorData, accelSensorData)
+                // Finally, copy the derived samples to correct storage array
+                copyActivitySamples(activitySamples, currentActivityIndex)
+                updateUI(currentActivityIndex, activitySamples.size)
+
+            } finally {
+                activityThread.transferLearningDataCapturingLock.unlock()
+            }
         }
     }
 
@@ -706,18 +942,18 @@ constructor(val activityThread: TransferLearning): Thread() {
         return Pair(gyroSensorData, accelSensorData)
     }
 
-    fun doProcessing(gyroSensorData: Array<Array<Double>>, accelSensorData: Array<Array<Double>>) {
+    fun doProcessing(gyroSensorData: Array<Array<Double>>, accelSensorData: Array<Array<Double>>): Array<Array<Array<Double>>> {
 
         val (gyroDataClipped, accelDataClipped) = clipData(gyroSensorData, accelSensorData)
         val (gyroDataResampled, accelDataResampled) = resampleData(gyroDataClipped, accelDataClipped)
         val timeframes = splitIntoTimeframes(gyroDataResampled, accelDataResampled)
 
-        val k = 5
+        return timeframes
     }
 
     fun clipData(gyroSensorData: Array<Array<Double>>, accelSensorData: Array<Array<Double>>): Pair<Array<Array<Double>>, Array<Array<Double>>> {
-        val gyroDataClipped = SignalProcessingUtilities.clipDataSeriesBackoff(gyroSensorData, T_backoff = 1.0)
-        val accelDataClipped = SignalProcessingUtilities.clipDataSeriesBackoff(accelSensorData, T_backoff = 1.0)
+        val gyroDataClipped = SignalProcessingUtilities.clipDataSeriesBackoff(gyroSensorData, T_backoff = 5.0)
+        val accelDataClipped = SignalProcessingUtilities.clipDataSeriesBackoff(accelSensorData, T_backoff = 5.0)
 
         return Pair(gyroDataClipped, accelDataClipped)
     }
@@ -755,6 +991,24 @@ constructor(val activityThread: TransferLearning): Thread() {
             ))
         }
         return sampleList.toTypedArray()
+    }
+
+    fun copyActivitySamples(samples: Array<Array<Array<Double>>>, activityID: Int) {
+
+        if (activityID == 0) {
+            activityThread.walkingTransferLearningSamples = samples.clone()
+        } else if (activityID == 1) {
+            activityThread.walkingUpstairsTransferLearningSamples = samples.clone()
+        } else if (activityID == 2) {
+            activityThread.walkingDownstairsLearningSamples = samples.clone()
+        }
+        activityThread.transferLearningSampleCounts[activityID] = samples.size
+    }
+
+    fun updateUI(activityID:Int, N_samples:Int) {
+        val msg = Message()
+        msg.obj = Pair(activityID, N_samples)
+        activityThread.transferLearningActivitySamplingFinishedHandler.sendMessage(msg)
     }
 }
 

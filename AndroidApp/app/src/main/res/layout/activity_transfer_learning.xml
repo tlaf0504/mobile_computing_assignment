@@ -14,19 +14,20 @@
         android:text="Back to Main"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent" />
+        app:layout_constraintRight_toRightOf="parent"
+        android:layout_marginHorizontal="10pt"/>
 
 
     <TableLayout
         android:id="@+id/activity_probabilities_table"
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:layout_constraintBottom_toTopOf="@id/button_transfer_learning_return"
         app:layout_constraintEnd_toEndOf="@id/tfl_activity_sample_spinner"
-        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.0">
+        app:layout_constraintVertical_bias="0.0"
+        android:layout_marginTop="16pt">
 
         <TableRow
             android:layout_height="wrap_content"
@@ -144,258 +145,6 @@
         </TableRow>
         <TableRow
             android:layout_height="wrap_content"
-            android:layout_width="fill_parent">
-
-            <TextView
-                android:id="@+id/activity_4_left"
-                android:layout_column="1"
-                android:layout_gravity="center_vertical"
-                android:gravity="right"
-                android:text="@string/activity_4_left_val"
-                android:layout_weight="40"/>
-
-            <TextView
-                android:id="@+id/activity_4_label"
-                android:layout_column="2"
-                android:layout_gravity="center_vertical"
-                android:gravity="center_horizontal"
-                android:text="Sitting"
-                android:layout_weight="20"/>
-
-            <TextView
-                android:id="@+id/activity_4_right"
-                android:layout_column="3"
-                android:layout_gravity="center_vertical"
-                android:gravity="left"
-                android:text="@string/activity_4_right_val"
-                android:layout_weight="40"/>
-        </TableRow>
-        <TableRow
-            android:layout_height="wrap_content"
-            android:layout_width="fill_parent">
-
-            <TextView
-                android:id="@+id/activity_5_left"
-                android:layout_column="1"
-                android:layout_gravity="center_vertical"
-                android:gravity="right"
-                android:text="@string/activity_5_left_val"
-                android:layout_weight="40"/>
-
-            <TextView
-                android:id="@+id/activity_5_label"
-                android:layout_column="2"
-                android:layout_gravity="center_vertical"
-                android:gravity="center_horizontal"
-                android:text="Standing"
-                android:layout_weight="20"/>
-
-            <TextView
-                android:id="@+id/activity_5_right"
-                android:layout_column="3"
-                android:layout_gravity="center_vertical"
-                android:gravity="left"
-                android:text="@string/activity_5_right_val"
-                android:layout_weight="40"/>
-        </TableRow>
-        <TableRow
-            android:layout_height="wrap_content"
-            android:layout_width="fill_parent">
-
-            <TextView
-                android:id="@+id/activity_6_left"
-                android:layout_column="1"
-                android:layout_gravity="center_vertical"
-                android:gravity="right"
-                android:text="@string/activity_6_left_val"
-                android:layout_weight="40"/>
-
-            <TextView
-                android:id="@+id/activity_6_label"
-                android:layout_column="2"
-                android:layout_gravity="center_vertical"
-                android:gravity="center_horizontal"
-                android:text="Laying"
-                android:layout_weight="20"/>
-
-            <TextView
-                android:id="@+id/activity_6_right"
-                android:layout_column="3"
-                android:layout_gravity="center_vertical"
-                android:gravity="left"
-                android:text="@string/activity_6_right_val"
-                android:layout_weight="40"/>
-        </TableRow>
-        <TableRow
-            android:layout_height="wrap_content"
-            android:layout_width="fill_parent">
-
-            <TextView
-                android:id="@+id/activity_7_left"
-                android:layout_column="1"
-                android:layout_gravity="center_vertical"
-                android:gravity="right"
-                android:text="@string/activity_7_left_val"
-                android:layout_weight="40"/>
-
-            <TextView
-                android:id="@+id/activity_7_label"
-                android:layout_column="2"
-                android:layout_gravity="center_vertical"
-                android:gravity="center_horizontal"
-                android:text="Stand to Sit"
-                android:layout_weight="20"/>
-
-            <TextView
-                android:id="@+id/activity_7_right"
-                android:layout_column="3"
-                android:layout_gravity="center_vertical"
-                android:gravity="left"
-                android:text="@string/activity_7_right_val"
-                android:layout_weight="40"/>
-        </TableRow>
-        <TableRow
-            android:layout_height="wrap_content"
-            android:layout_width="fill_parent">
-
-            <TextView
-                android:id="@+id/activity_8_left"
-                android:layout_column="1"
-                android:layout_gravity="center_vertical"
-                android:gravity="right"
-                android:text="@string/activity_8_left_val"
-                android:layout_weight="40"/>
-
-            <TextView
-                android:id="@+id/activity_8_label"
-                android:layout_column="2"
-                android:layout_gravity="center_vertical"
-                android:gravity="center_horizontal"
-                android:text="Sit to Stand"
-                android:layout_weight="20"/>
-
-            <TextView
-                android:id="@+id/activity_8_right"
-                android:layout_column="3"
-                android:layout_gravity="center_vertical"
-                android:gravity="left"
-                android:text="@string/activity_8_right_val"
-                android:layout_weight="40"/>
-        </TableRow>
-        <TableRow
-            android:layout_height="wrap_content"
-            android:layout_width="fill_parent">
-
-            <TextView
-                android:id="@+id/activity_9_left"
-                android:layout_column="1"
-                android:layout_gravity="center_vertical"
-                android:gravity="right"
-                android:text="@string/activity_9_left_val"
-                android:layout_weight="40"/>
-
-            <TextView
-                android:id="@+id/activity_9_label"
-                android:layout_column="2"
-                android:layout_gravity="center_vertical"
-                android:gravity="center_horizontal"
-                android:text="Sit to Lie"
-                android:layout_weight="20"/>
-
-            <TextView
-                android:id="@+id/activity_9_right"
-                android:layout_column="3"
-                android:layout_gravity="center_vertical"
-                android:gravity="left"
-                android:text="@string/activity_9_right_val"
-                android:layout_weight="40"/>
-        </TableRow>
-        <TableRow
-            android:layout_height="wrap_content"
-            android:layout_width="fill_parent">
-
-            <TextView
-                android:id="@+id/activity_10_left"
-                android:layout_column="1"
-                android:layout_gravity="center_vertical"
-                android:gravity="right"
-                android:text="@string/activity_10_left_val"
-                android:layout_weight="40"/>
-
-            <TextView
-                android:id="@+id/activity_10_label"
-                android:layout_column="2"
-                android:layout_gravity="center_vertical"
-                android:gravity="center_horizontal"
-                android:text="Lie to Sit"
-                android:layout_weight="20"/>
-
-            <TextView
-                android:id="@+id/activity_10_right"
-                android:layout_column="3"
-                android:layout_gravity="center_vertical"
-                android:gravity="left"
-                android:text="@string/activity_10_right_val"
-                android:layout_weight="40"/>
-        </TableRow>
-        <TableRow
-            android:layout_height="wrap_content"
-            android:layout_width="fill_parent">
-
-            <TextView
-                android:id="@+id/activity_11_left"
-                android:layout_column="1"
-                android:layout_gravity="center_vertical"
-                android:gravity="right"
-                android:text="@string/activity_11_left_val"
-                android:layout_weight="40"/>
-
-            <TextView
-                android:id="@+id/activity_11_label"
-                android:layout_column="2"
-                android:layout_gravity="center_vertical"
-                android:gravity="center_horizontal"
-                android:text="Stand to Lie"
-                android:layout_weight="20"/>
-
-            <TextView
-                android:id="@+id/activity_11_right"
-                android:layout_column="3"
-                android:layout_gravity="center_vertical"
-                android:gravity="left"
-                android:text="@string/activity_11_right_val"
-                android:layout_weight="40"/>
-        </TableRow>
-        <TableRow
-            android:layout_height="wrap_content"
-            android:layout_width="fill_parent">
-
-            <TextView
-                android:id="@+id/activity_12_left"
-                android:layout_column="1"
-                android:layout_gravity="center_vertical"
-                android:gravity="right"
-                android:text="@string/activity_12_left_val"
-                android:layout_weight="40"/>
-
-            <TextView
-                android:id="@+id/activity_12_label"
-                android:layout_column="2"
-                android:layout_gravity="center_vertical"
-                android:gravity="center_horizontal"
-                android:text="Lie to Stand"
-                android:layout_weight="20"/>
-
-            <TextView
-                android:id="@+id/activity_12_right"
-                android:layout_column="3"
-                android:layout_gravity="center_vertical"
-                android:gravity="left"
-                android:text="@string/activity_12_right_val"
-                android:layout_weight="40"/>
-        </TableRow>
-        <TableRow
-            android:layout_height="wrap_content"
             android:layout_width="fill_parent"
             android:layout_marginTop="5pt">
 
@@ -427,6 +176,15 @@
         </TableRow>
 
     </TableLayout>
+    <View
+        android:id="@+id/sep_1"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/cardview_light_background"
+        app:layout_constraintTop_toBottomOf="@id/activity_probabilities_table"
+        android:layout_marginTop="10pt"
+        android:layout_marginStart="5pt"
+        android:layout_marginEnd="5pt"/>
 
     <TextView
         android:id="@+id/tfl_activity_sample_spinner_label"
@@ -435,8 +193,8 @@
         android:text="Select Activity to capture"
         android:textStyle="bold"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/activity_probabilities_table"
-        android:layout_marginTop="10pt"
+        app:layout_constraintTop_toBottomOf="@id/sep_1"
+        android:layout_marginTop="10dp"
         android:layout_marginStart="16dp"
         />
 
@@ -469,4 +227,171 @@
         app:layout_constraintBaseline_toBaselineOf="@id/tfl_recording_switch"
         android:layout_marginStart="0pt"
         android:text="Record" />
+
+
+    <TableLayout
+        android:id="@+id/tf_learning_capture_timestamp_table"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toBottomOf="@+id/tfl_recording_switch"
+        android:layout_marginTop="20pt">
+
+        <TableRow
+            android:layout_height="wrap_content"
+            android:layout_width="fill_parent">
+
+            <TextView
+                android:id="@+id/tfl_timestamps_header_left"
+                android:layout_column="1"
+                android:layout_gravity="center_vertical"
+                android:gravity="left"
+                android:text="Activity"
+                android:layout_marginLeft="10pt"
+                android:textStyle="bold"
+                android:layout_weight="40"/>
+
+            <TextView
+                android:id="@+id/tfl_timestamps_header_center"
+                android:layout_column="2"
+                android:layout_gravity="center_vertical"
+                android:gravity="left"
+                android:text="Last Capture"
+                android:textStyle="bold"
+                android:layout_weight="40"/>
+
+            <TextView
+                android:id="@+id/tfl_timestamps_header_right"
+                android:layout_column="3"
+                android:layout_gravity="center_vertical"
+                android:gravity="left"
+                android:text="#Samples"
+                android:textStyle="bold"
+                android:layout_weight="20"/>
+        </TableRow>
+        <TableRow
+            android:layout_height="wrap_content"
+            android:layout_width="fill_parent">
+            <TextView
+                android:id="@+id/tfl_timestamps_1_left"
+                android:layout_column="1"
+                android:layout_gravity="center_vertical"
+                android:gravity="left"
+                android:text="Walking"
+                android:layout_marginLeft="10pt"
+                android:layout_weight="40"/>
+            <TextView
+                android:id="@+id/tfl_timestamps_1_center"
+                android:layout_column="2"
+                android:layout_gravity="center_vertical"
+                android:gravity="left"
+                android:text=""
+                android:layout_weight="40"/>
+
+            <TextView
+                android:id="@+id/tfl_timestamps_1_right"
+                android:layout_column="3"
+                android:layout_gravity="center_vertical"
+                android:gravity="left"
+                android:text=""
+                android:layout_weight="20"/>
+        </TableRow>
+        <TableRow
+            android:layout_height="wrap_content"
+            android:layout_width="fill_parent">
+
+            <TextView
+                android:id="@+id/tfl_timestamps_2_left"
+                android:layout_height="match_parent"
+                android:layout_column="1"
+                android:layout_gravity="center_vertical"
+                android:layout_marginLeft="10pt"
+                android:layout_weight="40"
+                android:gravity="left"
+                android:text="Walking Upstairs" />
+            <TextView
+                android:id="@+id/tfl_timestamps_2_center"
+                android:layout_column="2"
+                android:layout_gravity="center_vertical"
+                android:gravity="left"
+                android:text=""
+                android:layout_weight="40"/>
+
+            <TextView
+                android:id="@+id/tfl_timestamps_2_right"
+                android:layout_column="3"
+                android:layout_gravity="center_vertical"
+                android:gravity="left"
+                android:text=""
+                android:layout_weight="20"/>
+        </TableRow>
+        <TableRow
+            android:layout_height="wrap_content"
+            android:layout_width="fill_parent">
+
+            <TextView
+                android:id="@+id/tfl_timestamps_3_left"
+                android:layout_column="1"
+                android:layout_gravity="center_vertical"
+                android:gravity="left"
+                android:text="Walking Downstairs"
+                android:layout_marginLeft="10pt"
+                android:layout_weight="40"/>
+            <TextView
+                android:id="@+id/tfl_timestamps_3_center"
+                android:layout_column="2"
+                android:layout_gravity="center_vertical"
+                android:gravity="left"
+                android:text=""
+                android:layout_weight="40"/>
+
+            <TextView
+                android:id="@+id/tfl_timestamps_3_right"
+                android:layout_column="3"
+                android:layout_gravity="center_vertical"
+                android:gravity="left"
+                android:text=""
+                android:layout_weight="20"/>
+        </TableRow>
+    </TableLayout>
+
+    <TextView
+        android:id="@+id/loss_value"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_horizontal"
+        android:layout_marginTop="15pt"
+        app:layout_constraintTop_toBottomOf="@+id/tf_learning_capture_timestamp_table"
+        android:text="Loss: 0.00"/>
+
+    <Button
+        android:id="@+id/tfl_start_learning"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="32dp"
+        android:text="Learn"
+        app:layout_constraintTop_toBottomOf="@+id/loss_value"
+        android:layout_marginHorizontal="10pt"
+        android:layout_marginTop="5pt"/>
+
+    <View
+        android:id="@+id/sep_2"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/cardview_light_background"
+        app:layout_constraintTop_toBottomOf="@+id/tfl_start_learning"
+        android:layout_marginTop="10pt"
+        android:layout_marginStart="5pt"
+        android:layout_marginEnd="5pt"/>
+
+    <Button
+        android:id="@+id/tfl_debug"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="10dp"
+        android:text="Debug"
+        app:layout_constraintTop_toBottomOf="@+id/sep_2"
+        android:layout_marginHorizontal="10pt"
+        android:layout_marginTop="1pt"/>
+
+
 </androidx.constraintlayout.widget.ConstraintLayout>
