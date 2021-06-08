@@ -421,6 +421,8 @@ public final class TransferLearningModel implements Closeable {
     return trainHeadModel.getBatchSize();
   }
 
+  public int getSampleCount() { return trainingSamples.size(); }
+
   /**
    * Constructs an iterator that iterates over training sample batches.
    * @return iterator over batches.

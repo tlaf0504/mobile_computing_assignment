@@ -40,7 +40,8 @@ import org.tensorflow.lite.examples.transfer.api.TransferLearningModel.Predictio
  * run-once API of {@link TransferLearningModel}.
  */
 public class TransferLearningModelWrapper implements Closeable {
-  private final TransferLearningModel model;
+  //private final TransferLearningModel model;
+  TransferLearningModel model;
 
   private final ConditionVariable shouldTrain = new ConditionVariable();
   private volatile LossConsumer lossConsumer;
@@ -55,7 +56,7 @@ public class TransferLearningModelWrapper implements Closeable {
       while (!Thread.interrupted()) {
         shouldTrain.block();
         try {
-          model.train(20, lossConsumer).get();
+          model.train(1, lossConsumer).get();
         } catch (ExecutionException e) {
           throw new RuntimeException("Exception occurred during model training", e.getCause());
         } catch (InterruptedException e) {

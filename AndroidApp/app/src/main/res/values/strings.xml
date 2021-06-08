@@ -37,8 +37,8 @@
     <string name="activity_12_left_val">%1.2f</string>
     <string name="activity_12_right_val">%1.2f</string>
 
-    <string name="classified_activity_left_val">%s</string>
-    <string name="classified_activity_right_val">%s</string>
+    <string name="classified_activity_left_val">%10s</string>
+    <string name="classified_activity_right_val">%10s</string>
 
     <string name="loss_label_val">Loss: %f</string>
 
@@ -54,11 +54,13 @@
         <item>Sitting</item>
         <item>Laying</item>
         <item>Standing</item>
+        <item>Jumping</item>
     </string-array>
 
     <string-array name="transfer_learning_spinner_entries">
         <item>Walking</item>
         <item>Walking Upstairs</item>
         <item>Walking Downstairs</item>
+        <item>Jumping</item>
     </string-array>
 </resources>

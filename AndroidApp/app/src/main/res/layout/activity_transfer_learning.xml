@@ -38,7 +38,7 @@
                 android:layout_column="1"
                 android:layout_gravity="center_vertical"
                 android:gravity="right"
-                android:text="Pretrained Model"
+                android:text="Pretrained"
                 android:textStyle="bold"
                 android:layout_weight="40"/>
 
@@ -55,7 +55,7 @@
                 android:layout_column="3"
                 android:layout_gravity="center_vertical"
                 android:gravity="left"
-                android:text="Transfer Learninig"
+                android:text="Transfer"
                 android:textStyle="bold"
                 android:layout_weight="40"/>
         </TableRow>
@@ -77,6 +77,7 @@
                 android:layout_gravity="center_vertical"
                 android:gravity="center_horizontal"
                 android:text="Walking"
+                android:layout_marginHorizontal="5pt"
                 android:layout_weight="20"/>
 
             <TextView
@@ -105,6 +106,7 @@
                 android:layout_gravity="center_vertical"
                 android:gravity="center_horizontal"
                 android:text="Walking Upstairs"
+                android:layout_marginHorizontal="5pt"
                 android:layout_weight="20"/>
 
             <TextView
@@ -133,6 +135,7 @@
                 android:layout_gravity="center_vertical"
                 android:gravity="center_horizontal"
                 android:text="Walking Downstairs"
+                android:layout_marginHorizontal="5pt"
                 android:layout_weight="20"/>
 
             <TextView
@@ -141,6 +144,35 @@
                 android:layout_gravity="center_vertical"
                 android:gravity="left"
                 android:text="@string/activity_3_right_val"
+                android:layout_weight="40"/>
+        </TableRow>
+        <TableRow
+            android:layout_height="wrap_content"
+            android:layout_width="fill_parent">
+
+            <TextView
+                android:id="@+id/activity_4_left"
+                android:layout_column="1"
+                android:layout_gravity="center_vertical"
+                android:gravity="right"
+                android:text="@string/activity_4_left_val"
+                android:layout_weight="40"/>
+
+            <TextView
+                android:id="@+id/activity_4_label"
+                android:layout_column="2"
+                android:layout_gravity="center_vertical"
+                android:gravity="center_horizontal"
+                android:text="Jumping"
+                android:layout_marginHorizontal="5pt"
+                android:layout_weight="20"/>
+
+            <TextView
+                android:id="@+id/activity_4_right"
+                android:layout_column="3"
+                android:layout_gravity="center_vertical"
+                android:gravity="left"
+                android:text="@string/activity_4_right_val"
                 android:layout_weight="40"/>
         </TableRow>
         <TableRow
@@ -155,7 +187,8 @@
                 android:gravity="right"
                 android:text="@string/classified_activity_left_val"
                 android:layout_weight="40"
-                android:textStyle="bold"/>
+                android:textStyle="bold"
+                android:maxLength="10"/>
 
             <TextView
                 android:id="@+id/classified_activity_center"
@@ -172,16 +205,36 @@
                 android:gravity="left"
                 android:text="@string/classified_activity_left_val"
                 android:layout_weight="40"
-                android:textStyle="bold"/>
+                android:textStyle="bold"
+                android:maxLength="10"/>
         </TableRow>
 
     </TableLayout>
+
+    <Switch
+        android:id="@+id/tfl_inference_switch"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/activity_probabilities_table" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintStart_toEndOf="@+id/tfl_inference_switch"
+        app:layout_constraintBaseline_toBaselineOf="@+id/tfl_inference_switch"
+        android:layout_marginStart="0pt"
+        android:text="Inference" />
+
+
     <View
         android:id="@+id/sep_1"
         android:layout_width="match_parent"
         android:layout_height="1dp"
         android:background="@color/cardview_light_background"
-        app:layout_constraintTop_toBottomOf="@id/activity_probabilities_table"
+        app:layout_constraintTop_toBottomOf="@+id/tfl_inference_switch"
         android:layout_marginTop="10pt"
         android:layout_marginStart="5pt"
         android:layout_marginEnd="5pt"/>
@@ -354,31 +407,40 @@
         </TableRow>
     </TableLayout>
 
+    <Switch
+        android:id="@+id/tfl_learning_switch"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tf_learning_capture_timestamp_table" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintStart_toEndOf="@+id/tfl_learning_switch"
+        app:layout_constraintBaseline_toBaselineOf="@+id/tfl_learning_switch"
+        android:layout_marginStart="0pt"
+        android:text="Learn" />
+
     <TextView
         android:id="@+id/loss_value"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:gravity="center_horizontal"
         android:layout_marginTop="15pt"
-        app:layout_constraintTop_toBottomOf="@+id/tf_learning_capture_timestamp_table"
+        app:layout_constraintStart_toEndOf="@+id/tfl_learning_switch"
+        app:layout_constraintBaseline_toBaselineOf="@+id/tfl_learning_switch"
+        android:layout_marginStart="70pt"
         android:text="Loss: 0.00"/>
 
-    <Button
-        android:id="@+id/tfl_start_learning"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="32dp"
-        android:text="Learn"
-        app:layout_constraintTop_toBottomOf="@+id/loss_value"
-        android:layout_marginHorizontal="10pt"
-        android:layout_marginTop="5pt"/>
 
     <View
         android:id="@+id/sep_2"
         android:layout_width="match_parent"
         android:layout_height="1dp"
         android:background="@color/cardview_light_background"
-        app:layout_constraintTop_toBottomOf="@+id/tfl_start_learning"
+        app:layout_constraintTop_toBottomOf="@+id/tfl_learning_switch"
         android:layout_marginTop="10pt"
         android:layout_marginStart="5pt"
         android:layout_marginEnd="5pt"/>
