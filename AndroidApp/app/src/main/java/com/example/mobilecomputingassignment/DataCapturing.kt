@@ -45,24 +45,27 @@ class DataCapturing : AppCompatActivity(),
     private lateinit var bReturnToMainButton: Button;
 
 
-    /* Create 2D-Arrays for storing sensor-data. Each row contains 4 float-values:
+    /* Create 2D-Arrays for storing sensor-data. Each row contains 4 Double-values:
     * 1.) The Timestamp
     * 2.) The sensors x-value
     * 3.) The sensors y-value
     * 4.) The sensors z-value. */
 
+    private val array_size = 50_000
+
+    private val gyroTimeArray = Array<Long>(size=array_size, init = {-1})
+    private val accelTimeArray = Array<Long>(size=array_size, init = {-1})
+
     private val gyroSensorArray = arrayOf(
-        Array<Float>(size=5_000, init={-1.0F}),
-        Array<Float>(size=5_000, init={0.0F}),
-        Array<Float>(size=5_000, init={0.0F}),
-        Array<Float>(size=5_000, init={0.0F})
+        Array<Double>(size=array_size, init={0.0}),
+        Array<Double>(size=array_size, init={0.0}),
+        Array<Double>(size=array_size, init={0.0})
     );
 
     private val accelSensorArray = arrayOf(
-        Array<Float>(size=5_000, init={-1.0F}),
-        Array<Float>(size=5_000, init={0.0F}),
-        Array<Float>(size=5_000, init={0.0F}),
-        Array<Float>(size=5_000, init={0.0F})
+        Array<Double>(size=array_size, init={0.0}),
+        Array<Double>(size=array_size, init={0.0}),
+        Array<Double>(size=array_size, init={0.0})
     );
 
     // Counters used by the sensor-listeners to fill the sensor-arrays.
@@ -189,21 +192,21 @@ class DataCapturing : AppCompatActivity(),
         writeArrayToFile(accelSensorArray, fAccelerometerSensorDataFile);
     }
 
-    private fun writeArrayToFile(array: Array<Array<Float>>, file: FileWriter) {
-        val N_rows : Int = array[0].size
+    private fun writeArrayToFile(timeArray: Array<Long>, dataArray: Array<Array<Double>>, file: FileWriter) {
+        val N_rows : Int = timeArray.size
 
         for (k : Int in 0 until N_rows) {
-            /* The first column states the time-stamp of the measurement. This column is filled
+            /* The time-array states the time-stamp of the measurement. This array is filled
             *  with -1 when starting a new capture. The first value < 0.0
-            *  therefore indicated the end of the current caputre.
+            *  therefore indicated the end of the current capture.
             */
-            if (array[0][k] >= 0.0) {
-                val t : Float = array[0][k]
-                val x : Float = array[1][k]
-                val y : Float = array[2][k]
-                val z : Float = array[3][k]
+            if (timeArray[k] >= 0) {
+                val t : Long = timeArray[k]
+                val x : Double = dataArray[0][k]
+                val y : Double = dataArray[1][k]
+                val z : Double = dataArray[2][k]
 
-                file.write("%f;%f;%f;%f\n".format(t, x, y, z));
+                file.write("%d;%e;%e;%e\n".format(t, x, y, z));
             }
             else { break; }
         }
@@ -214,11 +217,11 @@ class DataCapturing : AppCompatActivity(),
     As the array is successively filled in the sensor-event listener, one can determine the total
     amount of measurement samples by searching for the first negative value in the first column.
      */
-    private fun cleanSensorDataArray(array: Array<Array<Float>>) {
-        array[0].fill(element=-1.0F)
-        array[1].fill(element=0.0F)
-        array[2].fill(element=0.0F)
-        array[3].fill(element=0.0F)
+    private fun cleanSensorDataArray(array: Array<Array<Double>>) {
+        array[0].fill(element=-1.0)
+        array[1].fill(element=0.0)
+        array[2].fill(element=0.0)
+        array[3].fill(element=0.0)
     }
 
     override fun onStart() {
@@ -242,9 +245,9 @@ class DataCapturing : AppCompatActivity(),
         val iSensorType: Int = event.sensor.type;
 
         if (iSensorType == Sensor.TYPE_GYROSCOPE) {
-            val fGyroX : Float = event.values[0];
-            val fGyroY : Float = event.values[1];
-            val fGyroZ : Float = event.values[2];
+            val fGyroX : Double = event.values[0].toDouble();
+            val fGyroY : Double = event.values[1].toDouble();
+            val fGyroZ : Double = event.values[2].toDouble();
 
             /* The code below is uncommented on purpose to show the current sensor values on the
             *  screen. In the release version it stays commented to save computation-time.*/
@@ -257,7 +260,7 @@ class DataCapturing : AppCompatActivity(),
             writeSensorDataLock.lock()
             try {
                 if (bWriteSensorData && gyroSensorFillCounter < gyroSensorArray[0].size) {
-                    gyroSensorArray[0][gyroSensorFillCounter] = (Calendar.getInstance().timeInMillis - captureStartTimestamp).toFloat();
+                    gyroSensorArray[0][gyroSensorFillCounter] = (Calendar.getInstance().timeInMillis - captureStartTimestamp).toDouble();
                     gyroSensorArray[1][gyroSensorFillCounter] = fGyroX;
                     gyroSensorArray[2][gyroSensorFillCounter] = fGyroY;
                     gyroSensorArray[3][gyroSensorFillCounter] = fGyroZ;
@@ -272,9 +275,9 @@ class DataCapturing : AppCompatActivity(),
         }
 
         if (iSensorType == Sensor.TYPE_ACCELEROMETER) {
-            val fAccelX : Float = event.values[0];
-            val fAccelY : Float = event.values[1];
-            val fAccelZ : Float = event.values[2];
+            val fAccelX : Double = event.values[0].toDouble();
+            val fAccelY : Double = event.values[1].toDouble();
+            val fAccelZ : Double = event.values[2].toDouble();
 
             /* The code below is uncommented on purpose to show the current sensor values on the
             *  screen. In the release version it stays commented to save computation-time.*/
@@ -287,7 +290,7 @@ class DataCapturing : AppCompatActivity(),
             writeSensorDataLock.lock()
             try {
                 if (bWriteSensorData && accelSensorFillCounter < accelSensorArray[0].size) {
-                    accelSensorArray[0][accelSensorFillCounter] = (Calendar.getInstance().timeInMillis - captureStartTimestamp).toFloat();
+                    accelSensorArray[0][accelSensorFillCounter] = (Calendar.getInstance().timeInMillis - captureStartTimestamp).toDouble();
                     accelSensorArray[1][accelSensorFillCounter] = fAccelX;
                     accelSensorArray[2][accelSensorFillCounter] = fAccelY;
                     accelSensorArray[3][accelSensorFillCounter] = fAccelZ;

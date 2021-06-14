@@ -50,7 +50,7 @@ public class TransferLearningModelWrapper implements Closeable {
     model =
         new TransferLearningModel(
             new AssetModelLoader(context, "model_transfer_learning"), Arrays.asList(
-                    "WALKING", "WALKING_UPSTAIRS", "WALKING_DOWNSTAIRS"));
+                    "WALKING", "WALKING_UPSTAIRS", "WALKING_DOWNSTAIRS", "RUNNING"));
 
     new Thread(() -> {
       while (!Thread.interrupted()) {
