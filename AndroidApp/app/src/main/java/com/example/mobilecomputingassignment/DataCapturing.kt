@@ -188,8 +188,8 @@ class DataCapturing : AppCompatActivity(),
     }
 
     private fun writeAllSensorData() {
-        writeArrayToFile(gyroSensorArray, fGyroSensorDataFile);
-        writeArrayToFile(accelSensorArray, fAccelerometerSensorDataFile);
+        writeArrayToFile(gyroTimeArray, gyroSensorArray, fGyroSensorDataFile);
+        writeArrayToFile(accelTimeArray, accelSensorArray, fAccelerometerSensorDataFile);
     }
 
     private fun writeArrayToFile(timeArray: Array<Long>, dataArray: Array<Array<Double>>, file: FileWriter) {
@@ -212,16 +212,19 @@ class DataCapturing : AppCompatActivity(),
         }
     }
 
-    /* Clean the content of the given sensor-data array. The first column is filled with (-1)s,
-    the remaining 3 columns are filled with zeros.
-    As the array is successively filled in the sensor-event listener, one can determine the total
-    amount of measurement samples by searching for the first negative value in the first column.
+    /* Clean the content of the given sensor-data array. (Fill it with all zeros.)
      */
     private fun cleanSensorDataArray(array: Array<Array<Double>>) {
-        array[0].fill(element=-1.0)
+        array[0].fill(element=0.0)
         array[1].fill(element=0.0)
         array[2].fill(element=0.0)
-        array[3].fill(element=0.0)
+    }
+
+    /* The time-array is filled with -1s to determine where the capture stopped.
+     (The first value > 0.)
+     */
+    private fun cleanTimeArray(array: Array<Long>) {
+        array.fill(element=-1)
     }
 
     override fun onStart() {
@@ -259,11 +262,12 @@ class DataCapturing : AppCompatActivity(),
 
             writeSensorDataLock.lock()
             try {
-                if (bWriteSensorData && gyroSensorFillCounter < gyroSensorArray[0].size) {
-                    gyroSensorArray[0][gyroSensorFillCounter] = (Calendar.getInstance().timeInMillis - captureStartTimestamp).toDouble();
-                    gyroSensorArray[1][gyroSensorFillCounter] = fGyroX;
-                    gyroSensorArray[2][gyroSensorFillCounter] = fGyroY;
-                    gyroSensorArray[3][gyroSensorFillCounter] = fGyroZ;
+                // Only write to array if data-capturing is enabled and there is still space available in BOTH buffers
+                if (bWriteSensorData && gyroSensorFillCounter < gyroSensorArray[0].size && accelSensorFillCounter < accelSensorArray[0].size) {
+                    gyroTimeArray[gyroSensorFillCounter] = event.timestamp
+                    gyroSensorArray[0][gyroSensorFillCounter] = fGyroX;
+                    gyroSensorArray[1][gyroSensorFillCounter] = fGyroY;
+                    gyroSensorArray[2][gyroSensorFillCounter] = fGyroZ;
 
                     gyroSensorFillCounter++;
 
@@ -289,11 +293,12 @@ class DataCapturing : AppCompatActivity(),
 
             writeSensorDataLock.lock()
             try {
-                if (bWriteSensorData && accelSensorFillCounter < accelSensorArray[0].size) {
-                    accelSensorArray[0][accelSensorFillCounter] = (Calendar.getInstance().timeInMillis - captureStartTimestamp).toDouble();
-                    accelSensorArray[1][accelSensorFillCounter] = fAccelX;
-                    accelSensorArray[2][accelSensorFillCounter] = fAccelY;
-                    accelSensorArray[3][accelSensorFillCounter] = fAccelZ;
+                // Only write to array if data-capturing is enabled and there is still space available in BOTH buffers
+                if (bWriteSensorData && accelSensorFillCounter < accelSensorArray[0].size && gyroSensorFillCounter < gyroSensorArray[0].size) {
+                    accelTimeArray[accelSensorFillCounter] = event.timestamp
+                    accelSensorArray[0][accelSensorFillCounter] = fAccelX;
+                    accelSensorArray[1][accelSensorFillCounter] = fAccelY;
+                    accelSensorArray[2][accelSensorFillCounter] = fAccelZ;
 
                     accelSensorFillCounter++;
                 }
@@ -312,9 +317,11 @@ class DataCapturing : AppCompatActivity(),
         try {
             if (isChecked) {
                 cleanSensorDataArray(gyroSensorArray);
+                cleanTimeArray(gyroTimeArray);
                 gyroSensorFillCounter = 0;
 
                 cleanSensorDataArray(accelSensorArray);
+                cleanTimeArray(accelTimeArray);
                 accelSensorFillCounter = 0;
 
                 captureStartTimestamp = Calendar.getInstance().timeInMillis

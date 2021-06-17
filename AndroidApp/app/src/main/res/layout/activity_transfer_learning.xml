@@ -163,7 +163,7 @@
                 android:layout_column="2"
                 android:layout_gravity="center_vertical"
                 android:gravity="center_horizontal"
-                android:text="Jumping"
+                android:text="Running"
                 android:layout_marginHorizontal="5pt"
                 android:layout_weight="20"/>
 
