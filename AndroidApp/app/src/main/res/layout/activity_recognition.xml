@@ -19,110 +19,118 @@
         app:layout_constraintRight_toRightOf="parent" />
 
     <TableLayout
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        app:layout_constraintBottom_toTopOf="@id/button_activity_return"
+        android:id="@+id/activity_kNN_probabilities_table"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toTopOf="@+id/button_activity_return"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.0"
+        android:layout_marginTop="16pt">
 
         <TableRow
             android:layout_height="wrap_content"
-            android:layout_weight="30" />
-
+            android:layout_width="fill_parent">
+            <TextView
+                android:id="@+id/activity_knn_1_label"
+                android:layout_column="0"
+                android:layout_gravity="center_vertical"
+                android:gravity="right"
+                android:text="Activity 1"
+                android:layout_marginHorizontal="5pt"
+                android:layout_weight="20"/>
+            <TextView
+                android:id="@+id/activity_knn_1_prob"
+                android:layout_column="1"
+                android:layout_gravity="center_vertical"
+                android:gravity="left"
+                android:text="@string/activity_knn_1_prob"
+                android:layout_weight="40"/>
+        </TableRow>
+        <TableRow
+            android:layout_height="wrap_content"
+            android:layout_width="fill_parent">
+            <TextView
+                android:id="@+id/activity_knn_2_label"
+                android:layout_column="0"
+                android:layout_gravity="center_vertical"
+                android:gravity="right"
+                android:text="Activity 2"
+                android:layout_marginHorizontal="5pt"
+                android:layout_weight="20"/>
+            <TextView
+                android:id="@+id/activity_knn_2_prob"
+                android:layout_column="1"
+                android:layout_gravity="center_vertical"
+                android:gravity="left"
+                android:text="@string/activity_knn_2_prob"
+                android:layout_weight="40"/>
+        </TableRow>
+        <TableRow
+            android:layout_height="wrap_content"
+            android:layout_width="fill_parent">
+            <TextView
+                android:id="@+id/activity_knn_3_label"
+                android:layout_column="0"
+                android:layout_gravity="center_vertical"
+                android:gravity="right"
+                android:text="Activity 3"
+                android:layout_marginHorizontal="5pt"
+                android:layout_weight="20"/>
+            <TextView
+                android:id="@+id/activity_knn_3_prob"
+                android:layout_column="1"
+                android:layout_gravity="center_vertical"
+                android:gravity="left"
+                android:text="@string/activity_knn_3_prob"
+                android:layout_weight="40"/>
+        </TableRow>
+        <TableRow
+            android:layout_height="wrap_content"
+            android:layout_width="fill_parent">
+            <TextView
+                android:id="@+id/activity_knn_4_label"
+                android:layout_column="0"
+                android:layout_gravity="center_vertical"
+                android:gravity="right"
+                android:text="Activity 4"
+                android:layout_marginHorizontal="5pt"
+                android:layout_weight="20"/>
+            <TextView
+                android:id="@+id/activity_knn_4_prob"
+                android:layout_column="1"
+                android:layout_gravity="center_vertical"
+                android:gravity="left"
+                android:text="@string/activity_knn_4_prob"
+                android:layout_weight="40"/>
+        </TableRow>
         <TableRow
             android:layout_height="wrap_content"
             android:layout_width="fill_parent"
-            android:layout_weight="40">
-
+            android:layout_marginTop="5pt">
             <TextView
-                android:id="@+id/triceps_probability"
-                android:layout_height="wrap_content"
-                android:layout_column="1"
-                android:text="@string/triceps_percentage"
+                android:id="@+id/classified_activity_knn"
+                android:layout_column="0"
                 android:layout_gravity="center_vertical"
                 android:gravity="right"
-                android:layout_weight="50"
-                />
+                android:text="@string/classified_activity_knn"
+                android:layout_weight="20"
+                android:textStyle="bold"
+                android:layout_marginHorizontal="5pt"
+                android:maxLength="10"/>
 
             <TextView
-                android:layout_height="50pt"
+                android:id="@+id/classified_activity_knn_right"
                 android:layout_column="1"
-                android:layout_marginStart="5pt"
-                android:layout_marginEnd="2pt"
-                android:text="Triceps Curls"
                 android:layout_gravity="center_vertical"
-                android:gravity="center"
-                android:background="@drawable/border"/>
-
-            <TextView
-                android:layout_height="50pt"
-                android:layout_column="1"
-                android:layout_marginStart="2pt"
-                android:layout_marginEnd="5pt"
-                android:text="Bizeps Curls"
-                android:layout_gravity="center_vertical"
-                android:gravity="center"
-                android:background="@drawable/border"/>
-
-            <TextView
-                android:id="@+id/biceps_probability"
-                android:layout_height="wrap_content"
-                android:layout_column="5"
-                android:text="@string/biceps_percentage"
-                android:layout_gravity="center_vertical"
-                android:layout_weight="50"
-                />
+                android:gravity="left"
+                android:text=""
+                android:layout_weight="40"
+                android:textStyle="bold"
+                android:maxLength="10"/>
         </TableRow>
 
-        <TableRow
-            android:layout_height="wrap_content"
-            android:layout_width="fill_parent"
-            android:layout_weight="40">
-
-            <TextView
-                android:id="@+id/russian_twist_probability"
-                android:layout_height="wrap_content"
-                android:layout_column="1"
-                android:text="@string/russian_twist_percentage"
-                android:layout_gravity="center_vertical"
-                android:gravity="right"
-                android:layout_weight="50"
-                />
-
-            <TextView
-                android:layout_height="50pt"
-                android:layout_column="1"
-                android:layout_marginStart="5pt"
-                android:layout_marginEnd="2pt"
-                android:text="Russian Twist"
-                android:layout_gravity="center_vertical"
-                android:gravity="center"
-                android:background="@drawable/border"/>
-
-            <TextView
-                android:layout_height="50pt"
-                android:layout_column="1"
-                android:layout_marginStart="2pt"
-                android:layout_marginEnd="5pt"
-                android:text="Crunches"
-                android:layout_gravity="center_vertical"
-                android:gravity="center"
-                android:background="@drawable/border"/>
-
-            <TextView
-                android:id="@+id/crunches_probability"
-                android:layout_height="wrap_content"
-                android:layout_column="5"
-                android:text="@string/crunches_percentage"
-                android:layout_gravity="center_vertical"
-                android:layout_weight="50"
-                />
-        </TableRow>
-
-        <TableRow
-            android:layout_height="wrap_content"
-            android:layout_weight="30" />
     </TableLayout>
 
 

@@ -20,25 +20,15 @@
     <string name="activity_3_right_val">%1.2f</string>
     <string name="activity_4_left_val">%1.2f</string>
     <string name="activity_4_right_val">%1.2f</string>
-    <string name="activity_5_left_val">%1.2f</string>
-    <string name="activity_5_right_val">%1.2f</string>
-    <string name="activity_6_left_val">%1.2f</string>
-    <string name="activity_6_right_val">%1.2f</string>
-    <string name="activity_7_left_val">%1.2f</string>
-    <string name="activity_7_right_val">%1.2f</string>
-    <string name="activity_8_left_val">%1.2f</string>
-    <string name="activity_8_right_val">%1.2f</string>
-    <string name="activity_9_left_val">%1.2f</string>
-    <string name="activity_9_right_val">%1.2f</string>
-    <string name="activity_10_left_val">%1.2f</string>
-    <string name="activity_10_right_val">%1.2f</string>
-    <string name="activity_11_left_val">%1.2f</string>
-    <string name="activity_11_right_val">%1.2f</string>
-    <string name="activity_12_left_val">%1.2f</string>
-    <string name="activity_12_right_val">%1.2f</string>
+
+    <string name="activity_knn_1_prob">%1.2f</string>
+    <string name="activity_knn_2_prob">%1.2f</string>
+    <string name="activity_knn_3_prob">%1.2f</string>
+    <string name="activity_knn_4_prob">%1.2f</string>
 
     <string name="classified_activity_left_val">%10s</string>
     <string name="classified_activity_right_val">%10s</string>
+    <string name="classified_activity_knn">%10s</string>
 
     <string name="loss_label_val">Loss: %f</string>
 
