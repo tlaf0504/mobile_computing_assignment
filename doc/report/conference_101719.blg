@@ -1,0 +1,9 @@
+[0] Config.pm:304> INFO - This is Biber 2.14
+[0] Config.pm:307> INFO - Logfile is 'conference_101719.blg'
+[47] biber:322> INFO - === Di Jun 22, 2021, 12:05:53
+[57] Biber.pm:415> INFO - Reading 'conference_101719.bcf'
+[106] Biber.pm:943> INFO - Found 0 citekeys in bib section 0
+[110] Utils.pm:304> WARN - The file 'conference_101719.bcf' does not contain any citations!
+[116] bbl.pm:652> INFO - Writing 'conference_101719.bbl' with encoding 'UTF-8'
+[116] bbl.pm:755> INFO - Output to conference_101719.bbl
+[116] Biber.pm:128> INFO - WARNINGS: 1
