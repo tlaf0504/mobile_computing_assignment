@@ -121,9 +121,11 @@ def load_data(path:str, src_type="txt"):
     
     return data
 
-def clip_data(t, signals, T_start, T_end):
-    idx_clip_start = np.where(t >= T_start)[0][0]
-    idx_clip_end = np.where(t <= T_end)[0][-1]
+def clip_data(t, signals, T_backoff_start, T_backoff_end):
+    T_start = t[0] + T_backoff_start
+    T_end = t[-1] - T_backoff_end
+    idx_clip_start = np.where(t >= T_start)[0][0] - 1
+    idx_clip_end = np.where(t <= T_end)[0][-1] + 1
 
     return idx_clip_start, idx_clip_end, t[idx_clip_start:idx_clip_end + 1], signals[idx_clip_start:idx_clip_end + 1, :]
 
