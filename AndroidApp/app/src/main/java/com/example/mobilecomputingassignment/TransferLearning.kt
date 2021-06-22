@@ -889,14 +889,12 @@ constructor(val activityThread: TransferLearning): Thread() {
 
 
         if (TEST) {
-            //print("Loading testset...")
             val data = loadTrainingSets()
             pretrainedModelTrainingSet = data.first
             transferLearningTrainingSet = data.second
 
             pretrainedModelTrainingSetCounter = 0
             transferLearningTrainingSetCounter = 0
-            //print("Done\n")
         }
 
         while (!terminateThread) {

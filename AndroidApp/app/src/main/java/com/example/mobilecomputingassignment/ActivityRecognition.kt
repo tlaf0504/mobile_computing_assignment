@@ -14,6 +14,8 @@ import java.util.*
 import java.lang.Thread
 import android.view.View
 import android.widget.Button
+import android.widget.SeekBar
+import android.widget.Spinner
 import android.widget.TextView
 import java.io.*
 import java.lang.NumberFormatException
@@ -35,73 +37,63 @@ class ActivityRecognition : AppCompatActivity(), SensorEventListener, View.OnCli
     private lateinit var classificationTimer: Timer;
     private lateinit var classificationTimerTask: ClassificationTimerTask;
     private lateinit var bReturnToMainButton: Button;
+    private lateinit var bDebug: Button;
 
-    val class_labels: Array<String> = arrayOf(
-            "Triceps-Curls",
-            "Russian-Twist",
-            "Biceps-Curls",
-            "Crunches"
+    /* ========== Sensor-data arrays ========== */
+    val arraySize:Int = 10_000 // Array-sizes determined empirically
+    val gyroTimeArray = Array<Long>(size=arraySize, init={-1})
+    val gyroSensorArray = arrayOf(
+        Array<Double>(size=arraySize, init={0.0}),
+        Array<Double>(size=arraySize, init={0.0}),
+        Array<Double>(size=arraySize, init={0.0})
+    );
+    val accelTimeArray = Array<Long>(size = arraySize, init={-1})
+    val accelSensorArray = arrayOf(
+        Array<Double>(size=arraySize, init={0.0}),
+        Array<Double>(size=arraySize, init={0.0}),
+        Array<Double>(size=arraySize, init={0.0})
+    );
+
+    //Handler triggered after model-inference
+    lateinit var probabilityUpdateHandler: Handler;
+
+    val activity_labels: Array<String> = arrayOf(
+        "Biceps-Curls",
+        "Triceps-Curls",
+        "Russian-Twist",
+        "Crunches"
     )
+
+    // A lock acquired while writing data to the sensor-data arrays.
+    // Acquire to lock data capturing.
+    val writeDataLock = ReentrantLock()
+
+    // Acquire to lock classification.
+    val classificationLock = ReentrantLock()
+
 
     private lateinit var tricepsActivityTextView: TextView;
     private lateinit var bicepsActivityTextView: TextView;
     private lateinit var crunchesActivityTextView: TextView;
     private lateinit var russianTwistActivityTextView: TextView;
+    private lateinit var classifiedActivityTextView: TextView;
 
-
-    /* ========== Sensor-data arrays ========== */
-
-    // Assuming sensor events every 150ms, an sensor-array of length 70 should be long engough
-    // to hold the desired timeframe of 10s. To have enough bachup, an array-length of 100 is
-    // chosen.
-    val arraySize:Int = 100
-    val gyroSensorArray = arrayOf(
-            Array<Double>(size=arraySize, init={-1.0}),
-            Array<Double>(size=arraySize, init={0.0}),
-            Array<Double>(size=arraySize, init={0.0}),
-            Array<Double>(size=arraySize, init={0.0})
-    );
-
-    val accelSensorArray = arrayOf(
-            Array<Double>(size=arraySize, init={-1.0}),
-            Array<Double>(size=arraySize, init={0.0}),
-            Array<Double>(size=arraySize, init={0.0}),
-            Array<Double>(size=arraySize, init={0.0})
-    );
-
-    val writeDataLock = ReentrantLock()
-    // The single buffer-operations like switchBufferSet() or cleanInactiveBufferSet()
-    // are used prevent race-conditions between them.
-    private val bufferOperationLock = ReentrantLock()
-    private var gyroDataCounter: Int = 0;
-    private var accelDataCounter: Int = 0;
-
-    lateinit var referenceDataFile : String;
-    var testsetDirectory: String = "";
-
-    lateinit var probabilityUpdateHandler:  Handler;
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_recognition)
 
-        tricepsActivityTextView = findViewById(R.id.triceps_probability)
-        bicepsActivityTextView = findViewById(R.id.biceps_probability)
-        crunchesActivityTextView = findViewById(R.id.crunches_probability)
-        russianTwistActivityTextView = findViewById(R.id.russian_twist_probability)
-
-        probabilityUpdateHandler = Handler(mainLooper, Handler.Callback { msg -> probabilityUpdateHandlerCallback(msg) })
-
-
-        referenceDataFile = "${filesDir}/reference/reference_data.csv";
-
-        // Comment the line below for regular operation. If uncommented,
-        // the application loads a defined test-set and starts the classification
-        // on the test-data.
-        //testsetDirectory = "${filesDir}/test_set"
+        probabilityUpdateHandler =
+            Handler(mainLooper, Handler.Callback { msg -> probabilityUpdateHandlerCallback(msg) })
 
         bReturnToMainButton = findViewById(R.id.button_activity_return);
         bReturnToMainButton.setOnClickListener(this)
+
+        tricepsActivityTextView = findViewById(R.id.activity_knn_1_prob)
+        bicepsActivityTextView = findViewById(R.id.activity_knn_2_prob)
+        crunchesActivityTextView = findViewById(R.id.activity_knn_3_prob)
+        russianTwistActivityTextView = findViewById(R.id.activity_knn_4_prob)
+        classifiedActivityTextView = findViewById(R.id.classified_activity_knn)
 
         sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager;
         gyroSensor = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
@@ -112,6 +104,8 @@ class ActivityRecognition : AppCompatActivity(), SensorEventListener, View.OnCli
         classificationTimerTask = ClassificationTimerTask(classificationThread);
 
         classificationThread.start()
+
+        initUI()
     }
 
     override fun onStart() {
@@ -123,7 +117,7 @@ class ActivityRecognition : AppCompatActivity(), SensorEventListener, View.OnCli
 
         // Schedule the classification task at a fixed rate of 2 seconds, but wait for 1 second
         // to start to ensure the UI is build up.
-        classificationTimer.scheduleAtFixedRate(classificationTimerTask, 1000, 2000);
+        classificationTimer.scheduleAtFixedRate(classificationTimerTask, 1000, 1000);
     }
 
     override fun onStop() {
@@ -149,12 +143,14 @@ class ActivityRecognition : AppCompatActivity(), SensorEventListener, View.OnCli
             val gyroX : Double = event.values[0].toDouble();
             val gyroY : Double = event.values[1].toDouble();
             val gyroZ : Double = event.values[2].toDouble();
-            // Get the timestamp in seconds
-            val time: Double = event.timestamp.toDouble() * 1e-9F;
 
             writeDataLock.lock()
             try {
-                pushSensorValuesToBuffer(gyroSensorArray, arrayOf(time, gyroX, gyroY, gyroZ))
+                pushSensorValuesToBuffers(
+                    gyroSensorArray,
+                    gyroTimeArray,
+                    event.timestamp,
+                    arrayOf(gyroX, gyroY, gyroZ))
 
             } finally {
                 writeDataLock.unlock()
@@ -169,7 +165,11 @@ class ActivityRecognition : AppCompatActivity(), SensorEventListener, View.OnCli
 
             writeDataLock.lock()
             try {
-                pushSensorValuesToBuffer(accelSensorArray, arrayOf(time, accelX, accelY, accelZ))
+                pushSensorValuesToBuffers(
+                    accelSensorArray,
+                    accelTimeArray,
+                    event.timestamp,
+                    arrayOf(accelX, accelY, accelZ))
             } finally {
                 writeDataLock.unlock()
             }
@@ -180,38 +180,81 @@ class ActivityRecognition : AppCompatActivity(), SensorEventListener, View.OnCli
         // Mandatory implementation by child-class of SensorEventListener()
     }
 
-    private fun shiftRightBufferEntries(buffer: Array<Array<Double>>) {
-        val N_columns: Int = buffer.size
-        val N_entries: Int = buffer[0].size
+    private fun <T: Number> shiftRightVector(vector: Array<T>, N: Int)  {
+        for (k in 0 until N) {
+            vector[N - k] = vector[N - k - 1]
+        }
+    }
 
-        for (k in N_entries - 1 downTo 1) {
-            for (l in 0 until N_columns) {
-                buffer[l][k] = buffer[l][k - 1]
+    private fun shiftRightBufferEntries(timeBuffer: Array<Long>,
+                                        sensorBuffer: Array<Array<Double>>) {
+        val N_columns: Int = sensorBuffer.size
+        val N_entries: Int = timeBuffer.size
+
+
+        // Get the number of non-empty rows
+        var N_filled_entries = 0
+        for (k in 0 until N_entries) {
+            if (timeBuffer[k] < 0) {
+                N_filled_entries = k
+                break;
             }
         }
 
-        for (l in 0 until N_columns) {
-            buffer[l][0] = Double.NaN
+        // Shift right time- and sensor-data-arrays
+        shiftRightVector(timeBuffer, N_filled_entries)
+        for (k in 0 until N_columns) {
+            shiftRightVector(sensorBuffer[k], N_filled_entries)
         }
     }
 
-    private fun pushSensorValuesToBuffer(buffer: Array<Array<Double>>, values: Array<Double>) {
-        shiftRightBufferEntries(buffer)
+    private fun pushSensorValuesToBuffers(
+        sensorBuffer: Array<Array<Double>>,
+        timeBuffer: Array<Long>,
+        timestamp: Long,
+        values: Array<Double>) {
+
+        shiftRightBufferEntries(timeBuffer, sensorBuffer)
+        timeBuffer[0] = timestamp
         for (k in 0 until values.size) {
-            buffer[k][0] = values[k];
+            sensorBuffer[k][0] = values[k];
         }
     }
 
-    fun probabilityUpdateHandlerCallback(msg: Message):Boolean {
-        setActivityProbabilities(msg.obj as Array<Double>)
+    // This method is NOT thread-safe!
+    fun flushSensorDataBuffers() {
+
+        gyroTimeArray.fill(-1)
+        gyroSensorArray[0].fill(0.0)
+        gyroSensorArray[1].fill(0.0)
+        gyroSensorArray[2].fill(0.0)
+
+        accelTimeArray.fill(-1)
+        accelSensorArray[0].fill(0.0)
+        accelSensorArray[1].fill(0.0)
+        accelSensorArray[2].fill(0.0)
+    }
+
+    private fun initUI() {
+        val values: Array<Double> = Array<Double>(size=activity_labels.size, init = {0.0})
+        setActivityProbabilities(0, values)
+
+    }
+
+    fun probabilityUpdateHandlerCallback(msg: Message): Boolean {
+        val (idx, values) = msg.obj as Pair<Int, Array<Double>>;
+        setActivityProbabilities(idx, values)
         return true
     }
 
-    fun setActivityProbabilities(values:Array<Double>) {
-        tricepsActivityTextView.text = resources.getString(R.string.triceps_percentage, values[0])
-        russianTwistActivityTextView.text = resources.getString(R.string.russian_twist_percentage, values[1])
-        bicepsActivityTextView.text = resources.getString(R.string.biceps_percentage, values[2])
-        crunchesActivityTextView.text = resources.getString(R.string.crunches_percentage, values[3])
+    fun setActivityProbabilities(mostProbableActivityIdx: Int, values:Array<Double>) {
+        tricepsActivityTextView.text = resources.getString(R.string.activity_knn_1_prob, values[0])
+        russianTwistActivityTextView.text = resources.getString(R.string.activity_knn_2_prob, values[1])
+        bicepsActivityTextView.text = resources.getString(R.string.activity_knn_3_prob, values[2])
+        crunchesActivityTextView.text = resources.getString(R.string.activity_knn_4_prob, values[3])
+
+        classifiedActivityTextView.text = resources.getString(R.string.classified_activity_knn,
+                activity_labels[mostProbableActivityIdx])
     }
 
     override fun onClick(v: View?) {
@@ -220,78 +263,89 @@ class ActivityRecognition : AppCompatActivity(), SensorEventListener, View.OnCli
             startActivity(intent);
         }
     }
+
+    fun loadRawSensorDataFromCSV(stream: InputStream): SensorData {
+        // Read data in CSV-format from given input-stream
+        val timestamps: MutableList<Long> = mutableListOf();
+        val data: MutableList<Array<Double>> = mutableListOf();
+        val reader = stream.bufferedReader()
+        var line: String? = reader.readLine();
+        while (line != null) {
+            val tokens = line.split(";")
+            try {
+                val timestamp: Long = tokens[0].toLong()
+                val sensorValues: Array<Double> =
+                    arrayOf(
+                        tokens[1].toDouble(), // X
+                        tokens[2].toDouble(), // Y
+                        tokens[3].toDouble()  // Z
+                    )
+                timestamps.add(element = timestamp)
+                data.add(element = sensorValues);
+
+            } catch (e: NumberFormatException) {}
+            line = reader.readLine()
+        }
+        reader.close()
+
+        /* Currently, the <data>-array is set up in a row-first index order, with the lowest
+           time-value at row 0.
+           To be compatible to the signal-processing flow, the structure has to be changed to
+           column-first index-order with the highest time-value at row 0.
+           The time-reversal have, of course, also to be applied to the timestamp-vector.
+         */
+        val N_samples = timestamps.size
+        val dataOut: Array<Array<Double>> = arrayOf(
+            Array<Double>(N_samples, init = {0.0}),
+            Array<Double>(N_samples, init = {0.0}),
+            Array<Double>(N_samples, init = {0.0})
+        )
+
+        for (k in 0 until N_samples) {
+            dataOut[0][k] = data[N_samples - 1 - k][0]
+            dataOut[1][k] = data[N_samples - 1 - k][1]
+            dataOut[2][k] = data[N_samples - 1 - k][2]
+        }
+
+        val timestampsOut: Array<Long> =
+            Array<Long>(size = N_samples, init = {idx -> timestamps[N_samples - 1 - idx]})
+
+        return SensorData(timestampsOut, dataOut)
+    }
 }
 
 
 class ClassificationThread
     constructor(val activityThread: ActivityRecognition) : Thread() {
+    // Set to true for enabling the test-mode.
+    // Thereby, provided samples used instead of the on-device sensor-data.
+    val TEST:Boolean = true
+    lateinit var testset: MutableList<TestSetSample>;
+    var testsetCounter: Int = 0;
 
     val synchronizationLock = ReentrantLock()
     val synchronizationCondition = synchronizationLock.newCondition()
 
-    private lateinit var gyroTestData: List<Array<Array<Double>>>;
-    private lateinit var accelTestData: List<Array<Array<Double>>>;
-    private lateinit var testClasses: List<Int>;
-    private var useTestData: Boolean = false;
-    private var testsetSize: Int = -1;
-    private var currentTestIndex: Int = -1;
-
-
 
     // Set this to true to terminate the thread.
     var terminateThread: Boolean = false;
-    private val sampling_frequency: Double = 100.0;
     private lateinit var neighbors: Array<Array<Double>>;
     private lateinit var neighbor_classes: Array<Int>;
 
-
-    //private lateinit var model: ConvertedModel;
-    //private lateinit var inputFeature0: TensorBuffer;
-    private val activity_labels: Array<String> = arrayOf(
-        "Walking",
-        "Walking Upstairs",
-        "Walking Downstairs",
-        "Sitting",
-        "Standing",
-        "Laying",
-        "Stand to Sit",
-        "Sit to Stand",
-        "Sit to Lie",
-        "Lie to Sit",
-        "Stand to Lie",
-        "Lie to Stand"
-    )
-
     override fun run() {
-
-        //model = ConvertedModel.newInstance(activityThread);
-        //inputFeature0 = TensorBuffer.createFixedSize(intArrayOf(1, 1200), DataType.FLOAT32);
 
         // Load the reference-data for kNN
         val reader = ReferenceDataCsvReader()
-        val ret_vals:Pair<Array<Array<Double>>, Array<Int>> = reader.read(activityThread.referenceDataFile)
-        neighbors = ret_vals.first;
-        neighbor_classes = ret_vals.second;
+        val reference_data: Pair<Array<Array<Double>>, Array<Int>> =
+            reader.read(activityThread.assets.open("kNN_reference_data.csv"))
+        neighbors = reference_data.first;
+        neighbor_classes = reference_data.second;
 
-        // Is the testsetDirectory-member in the Activity is not empty, iteratively apply the
-        // pre-captured test-signals to the classification-algorithm instead of using the
-        // sensor-data buffers.
-        if (activityThread.testsetDirectory.isNotEmpty()) {
-            val testSetLoader : TestSetLoader = TestSetLoader()
-            val (tmp1, tmp2, tmp3) =
-                    testSetLoader.load(activityThread.testsetDirectory);
-
-            gyroTestData = tmp1;
-            accelTestData = tmp2;
-            testClasses = tmp3;
-
-            useTestData = true;
-            testsetSize = gyroTestData.size;
-            currentTestIndex = 0;
-        } else {
-            useTestData = false;
+        if (TEST) {
+            testset =
+                TFLClassificationThread.loadSampleSet("knn_test_set", activityThread.assets)
+            testsetCounter = 0;
         }
-
 
         while(!terminateThread) {
 
@@ -301,267 +355,166 @@ class ClassificationThread
             synchronizationCondition.await()
 
             // Arrays filled with the sensor-data, either with runtime-data for testset-data
-            var gyroSensorData: Array<Array<Double>>;
-            var accelSensorData: Array<Array<Double>>;
+            var gyroData: SensorData;
+            var accelData: SensorData;
 
-            // Only used when applying the testset-data to the classification algorithms.
-            // Contains the expected class of the test-sample.
-            var expected_activity: Int = -1;
+            activityThread.writeDataLock.lock()
+            try {
+                /*
+                val stream_gyro = activityThread.assets.open("raw_sensor_data/curls/Curls_gyro_sensor_data_1624264514006_original_clipped.csv")
+                gyroData = activityThread.loadRawSensorDataFromCSV(stream_gyro)
 
-            // Use test-data as classification-input
-            if (useTestData) {
+                val stream_accel = activityThread.assets.open("raw_sensor_data/curls/Curls_accel_sensor_data_1624264514006_original_clipped.csv")
+                accelData = activityThread.loadRawSensorDataFromCSV(stream_accel)
+                */
 
-                gyroSensorData = arrayOf(
-                        gyroTestData[currentTestIndex][0].reversedArray(),
-                        gyroTestData[currentTestIndex][1].reversedArray(),
-                        gyroTestData[currentTestIndex][2].reversedArray(),
-                        gyroTestData[currentTestIndex][3].reversedArray()
-                )
-
-                accelSensorData = arrayOf(
-                        accelTestData[currentTestIndex][0].reversedArray(),
-                        accelTestData[currentTestIndex][1].reversedArray(),
-                        accelTestData[currentTestIndex][2].reversedArray(),
-                        accelTestData[currentTestIndex][3].reversedArray()
-                )
-
-                expected_activity = testClasses[currentTestIndex];
-
-
-
-            // Run the classification with the actual sensor-data
-            } else {
-                activityThread.writeDataLock.lock()
-                try {
-                     gyroSensorData = deepcopySensorDataBuffer(activityThread.gyroSensorArray);
-                     accelSensorData = deepcopySensorDataBuffer(activityThread.accelSensorArray);
-                } finally {
-                    activityThread.writeDataLock.unlock()
-                }
+                gyroData = SignalProcessingUtilities.deepcopySensorDataBuffer(activityThread.gyroTimeArray, activityThread.gyroSensorArray)
+                accelData = SignalProcessingUtilities.deepcopySensorDataBuffer(activityThread.accelTimeArray, activityThread.accelSensorArray)
+            } finally {
+                activityThread.writeDataLock.unlock()
             }
 
             // Do the computation with kNN classifier
-            val (activity, probabilities) = doComputationkNN(gyroSensorData, accelSensorData)
+
+            val (activity, probabilities) = doComputationkNN(gyroData, accelData)
             // <activity> < 0 in case of too less sensor-data (e.g. right after starting the app)
             if (activity >= 0) {
                 val msg = Message()
-                msg.obj = probabilities
+                msg.obj = Pair(activity, probabilities)
                 activityThread.probabilityUpdateHandler.sendMessage(msg)
+
+                if (TEST) {
+                    print("Cnt %d: Expected: %2d\tPredicted: %2d\n".format(testsetCounter, testset[testsetCounter].label, activity))
+                    testsetCounter = (testsetCounter + 1) % testset.size
+                }
             }
 
-
-            //val (activity, probabilities) = doComputationTFLite(gyroSensorData, accelSensorData)
-
-
-
-            // When applying the testset-data, write the result to the system-console.
-            if (useTestData) {
-                println("Idx: ${currentTestIndex}\tExpected: ${expected_activity}\tCalculated: ${activity}")
-                currentTestIndex = (currentTestIndex + 1) % testsetSize;
-            }
         }
     }
 
-    private fun doComputationTFLite(gyroSensorData: Array<Array<Double>>,
-                                    accelSensorData: Array<Array<Double>>): Pair<Int,Array<Double>> {
+    private fun doComputationkNN(gyroData: SensorData,
+                                 accelData: SensorData): Pair<Int, Array<Double>> {
 
-        //Extract the available data from the buffer it is not filled completely
-        val clippedData = clipData(gyroSensorData, accelSensorData, T_lim = 4.0);
+        // Clip the time-series to an interval of 4 seconds. (Times are given in nanoseconds.)
+        val T_clip: Long = 4_000_000_000
+        val (gyroDataClipped, accelDataClipped) =
+            clipData(gyroData, accelData, T_clip = T_clip);
 
         // Too less data available
-        if (clippedData[0][0].last() - clippedData[0][0].first() < 4.0) {
-            return Pair(-1, arrayOf(0.0, 0.0, 0.0, 0.0))
+        if (gyroDataClipped.first.isEmpty() || accelDataClipped.first.isEmpty()) {
+            return Pair(-1, Array<Double>(size=4, init={0.0}))
         }
 
-        val resampledSensorData = doResampling(clippedData[0],
-            clippedData[0],
-            fs=50.0,
-            Ns=200)
 
+        val T_start_gyro: Long = gyroDataClipped.first[0]
+        val T_end_gyro: Long = gyroDataClipped.first.last()
+        val T_start_accel: Long = accelDataClipped.first[0]
+        val T_end_accel: Long = accelDataClipped.first.last()
 
-        var tmp: FloatArray = FloatArray(size=1200, init={0.0F})
-
-        // Load Gyroscope Data
-        for (k in 0 until 2) {
-            for (l in 0 until 199) {
-                val idx = k * 200 + l
-                tmp[idx] = resampledSensorData[0][k][l].toFloat()
-            }
+        // Captured Data-Frame to short
+        if (T_end_gyro - T_start_gyro < T_clip ||
+            T_end_accel - T_start_accel < T_clip) {
+            // When too less data is available, return dummy values.
+            return Pair(-1, Array<Double>(size=4, init={0.0}))
         }
-        // Load Accelerometer Data
-        for (k in 3 until 5) {
-            for (l in 0 until 199) {
-                val idx = k * 200 + l
-                tmp[idx] = resampledSensorData[1][k-3][l].toFloat()
-            }
+
+        val resampledSensorData: Array<Array<Array<Double>>>;
+        if (TEST) {
+            resampledSensorData = arrayOf(
+                testset[testsetCounter].gyroSensorData,
+                testset[testsetCounter].accelSensorData)
+        } else {
+            resampledSensorData = doResampling(
+                gyroDataClipped,
+                accelDataClipped,
+                fs = 50.0,
+                Ns = 200
+            )
         }
-        /*
-        // Execute the model inference
-        inputFeature0.loadArray(tmp)
-        val outputs = model.process(inputFeature0)
 
-        // Convert output-data
-        val outputFeature0 = outputs.outputFeature0AsTensorBuffer
-        val outputArray = outputFeature0.floatArray
-
-        val outputIndexArray = (0 until 11).toList().toIntArray()
-        val sortedOutputIndexArray = outputIndexArray.sortedBy { idx -> outputArray[idx] }
-
-        for (k in 0 until 3) {
-            print("%18s:  %4.2f  |  ".format(
-                activity_labels[sortedOutputIndexArray[k]],
-                outputArray[sortedOutputIndexArray[k]] * 100))
-        }
-        print("\n")
-
-
-        */
-        val arr = Array<Double>(size=10, init={0.0})
-        return Pair<Int, Array<Double>>(-1,arr)
-    }
-
-    private fun doComputationkNN(gyroSensorData: Array<Array<Double>>,
-                              accelSensorData: Array<Array<Double>>): Pair<Int,Array<Double>> {
-
-        val clippedData = clipData(gyroSensorData, accelSensorData);
-        val N_samples_gyro = clippedData[0][0].size
-        val N_samples_accel = clippedData[1][0].size
-
-        // Too less sampled to provice proper classification
-        if (N_samples_gyro < 10 || N_samples_accel < 10) {
-            return Pair(-1, arrayOf(0.0, 0.0, 0.0, 0.0))
-        }
-        val resampledSensorData = doResampling(clippedData[0], clippedData[1])
         val sensorDataWithoutOffset = removeOffsets(resampledSensorData[0], resampledSensorData[1])
         val energies = calcEnergies(sensorDataWithoutOffset[0], sensorDataWithoutOffset[1])
         return doClassification(energies[0], energies[1])
     }
 
-    private fun doResampling(gyroSensorData: Array<Array<Double>>,
-                             accelSensorData: Array<Array<Double>>,
+    private fun doResampling(gyroData: SensorData,
+                             accelData: SensorData,
                              fs:Double=100.0,
                              Ns:Int = -1): Array<Array<Array<Double>>> {
+        /* The clipped data-series passed to this function are resampled to the given sampling
+           frequency. As one cannot ensure that the two series are aligned in time, the higher of
+           the two is used as reference-time passed to the resampling functions.
+           This means that the interval BELOW T_align is omitted in the resampling.
+        * */
+        val T_gyro_low: Long = gyroData.first[0]
+        val T_accel_low: Long = accelData.first[0]
+        val T_align: Long;
 
-        val gyroSensorDataResampled = resampleTimeSeries(gyroSensorData, fs=fs, N_samples_out = Ns)
-        val accelSensorDataResampled = resampleTimeSeries(accelSensorData, fs=fs, N_samples_out = Ns)
+        if (T_gyro_low > T_accel_low) {
+            T_align = T_gyro_low
+        } else {
+            T_align = T_accel_low
+        }
+
+        val gyroSensorDataResampled =
+            SignalProcessingUtilities.resampleTimeSeries(
+                data = gyroData,
+                fs=fs,
+                N_samples_out = Ns,
+                T_ref = T_align)
+
+        val accelSensorDataResampled =
+            SignalProcessingUtilities.resampleTimeSeries(
+                data = accelData,
+                fs=fs,
+                N_samples_out = Ns,
+                T_ref = T_align)
 
         return arrayOf(gyroSensorDataResampled, accelSensorDataResampled)
     }
 
+    // Clip both data-series to a given time-interval <T_clip>.
+    // <T_clip> is given in integer nanoseconds.
     private fun clipData(
-            gyroSensorData: Array<Array<Double>>,
-            accelSensorData: Array<Array<Double>>,
-            T_lim:Double=10.0): Array<Array<Array<Double>>> {
-        val clippedGyroData = clipDataSeries(gyroSensorData, T_lim=T_lim);
-        val clippedAccelData = clipDataSeries(accelSensorData, T_lim=T_lim);
+        gyroData: SensorData,
+        accelData: SensorData,
+        T_clip:Long=10_000_000_000): Pair<SensorData, SensorData> {
 
-        return arrayOf(
-                clippedGyroData,
-                clippedAccelData)
-    }
+        // Sensor-Data capturing is event-based, so no uniformly spaced sample timestamps can be
+        // assumed.
+        // Therefore, the time-series from Gyroscope and Accelerometer have to be aligned somehow.
+        // Here, the alignment is done according to the lower one of the highest timestamps for
+        // Gyroscope and Accelerometer.
+        // The clipping-functions below then clip the two data-series in a way that the samples
+        // right next to the determined clipping boundary are contained in the returned
+        // data-structures.
+        // Therefore, the returned time-series always contain a slightly longer time-interval than
+        // specified.
+        val T_high_gyro: Long = gyroData.first[0]
+        val T_high_accel: Long = accelData.first[0]
+        var T_clip_high: Long = -1
 
-    private fun clipDataSeries(dataArray: Array<Array<Double>>, T_lim:Double=10.0): Array<Array<Double>> {
-        val tmax = dataArray[0][0];
-        val N_samples = dataArray[0].size
-
-        // If the last row in the array is filled (indicated by a timestamp >= 0),
-        // AND the timeframe is shorter than the clipping-length, on can return the whole array.
-        if (dataArray[0].last() > 0 &&
-            dataArray[0][0] - dataArray[0].last() < T_lim) {
-
-            // Reverse the row-order to have the lowest time-value first.
-            return arrayOf(
-                dataArray[0].slice(dataArray[0].lastIndex downTo 0).toTypedArray(),
-                dataArray[1].slice(dataArray[0].lastIndex downTo 0).toTypedArray(),
-                dataArray[2].slice(dataArray[0].lastIndex downTo 0).toTypedArray(),
-                dataArray[3].slice(dataArray[0].lastIndex downTo 0).toTypedArray(),
-            )
-        }
-
-        // Go through the time-values and find the first one exceeding the given time-limit.
-        // If a "-1" is found beforehand, terminate the loop and return the array until the pre-last
-        // value.
-        var t0_idx = -1;
-        for (k in 0 until N_samples) {
-
-            // If a -1 is found, set the end-index to k-1
-            if (dataArray[0][k] < 0) {
-                t0_idx = k - 1;
-                break;
-            }
-
-            // If the limit-time is exceeded, use set the current row to be the last one in the
-            // returned array.
-            if (tmax - dataArray[0][k] >= T_lim) {
-                t0_idx = k;
-                break;
-            }
-        }
-
-        // Reverse the row-order to have the lowest time-value first.
-        return arrayOf(
-                dataArray[0].slice(t0_idx downTo 0).toTypedArray(),
-                dataArray[1].slice(t0_idx downTo 0).toTypedArray(),
-                dataArray[2].slice(t0_idx downTo 0).toTypedArray(),
-                dataArray[3].slice(t0_idx downTo 0).toTypedArray(),
-        )
-    }
-
-    private fun resampleTimeSeries(dataArray: Array<Array<Double>>,
-                                   fs:Double=100.0,
-                                   N_samples_out:Int = -1): Array<Array<Double>> {
-        val t_old = dataArray[0]
-        val t0 = t_old[0]
-        val t_new = t_old.map { tk -> tk - t0 };
-
-        var __N_samples_out: Int = -1
-        if (N_samples_out > 0) {
-            __N_samples_out = N_samples_out
+        if (T_high_gyro > T_high_accel) {
+            T_clip_high = T_high_accel
         } else {
-            __N_samples_out = (t_new[t_new.size - 1]* fs).toInt();
+            T_clip_high = T_high_gyro
         }
 
-        val x1 = Array<Double>(size=__N_samples_out, init={0.0});
-        val x2 = Array<Double>(size=__N_samples_out, init={0.0});
-        val x3 = Array<Double>(size=__N_samples_out, init={0.0});
+        val clippedGyroData =
+            SignalProcessingUtilities.clipAndReverseDataSeries(
+                data = gyroData,
+                T_clip = T_clip,
+                T_clip_high = T_clip_high);
 
-        var i: Int = 0;
+        val clippedAccelData =
+            SignalProcessingUtilities.clipAndReverseDataSeries(
+                accelData,
+                T_clip = T_clip,
+                T_clip_high = T_clip_high);
 
-        for (k: Int in 0 until __N_samples_out - 1) {
-
-            val tk = k / fs;
-
-            if (tk > t_new[i + 1]) {
-                i++;
-            }
-
-            val ti = t_new[i];
-            // Interpolate
-            val tip1 = t_new[i + 1];
-
-            val x1_i = dataArray[1][i];
-            val x1_ip1 = dataArray[1][i + 1];
-
-            val x2_i = dataArray[2][i];
-            val x2_ip1 = dataArray[2][i + 1];
-
-            val x3_i = dataArray[3][i];
-            val x3_ip1 = dataArray[3][i + 1];
-
-
-            /* >>===== Linear interpolation for time-point tk between time-points ti and tip1 */
-
-            // Compute this value only once, as it is required for all three data-channels.
-            val delta_t = (tk - ti) / (tip1 - ti);
-
-            x1[k] = (x1_ip1 - x1_i) * delta_t + x1_i;
-            x2[k] = (x2_ip1 - x2_i) * delta_t + x2_i;
-            x3[k] = (x3_ip1 - x3_i) * delta_t + x3_i;
-            /* <<===== */
-        }
-
-        return arrayOf(x1, x2, x3);
+        return Pair(clippedGyroData, clippedAccelData)
     }
+
 
 
     private fun removeOffsets(gyroSensorData: Array<Array<Double>>,
@@ -598,14 +551,14 @@ class ClassificationThread
     private fun calcEnergy(dataArray: Array<Array<Double>>): Array<Double> {
         val N_samples = dataArray[0].size;
 
-        val x1_squared: Array<Double> = dataArray[0].map { x -> x * x / N_samples }.toTypedArray();
-        val x2_squared: Array<Double> = dataArray[1].map { x -> x * x / N_samples}.toTypedArray();
-        val x3_squared: Array<Double> = dataArray[2].map { x -> x * x / N_samples}.toTypedArray();
+        val x1_squared: Array<Double> = dataArray[0].map { x -> x * x }.toTypedArray();
+        val x2_squared: Array<Double> = dataArray[1].map { x -> x * x }.toTypedArray();
+        val x3_squared: Array<Double> = dataArray[2].map { x -> x * x }.toTypedArray();
 
         return arrayOf(
-                x1_squared.sum(),
-                x2_squared.sum(),
-                x3_squared.sum()
+                x1_squared.sum() / N_samples,
+                x2_squared.sum() / N_samples,
+                x3_squared.sum() / N_samples
         )
     }
 
@@ -631,7 +584,7 @@ class ClassificationThread
         val sorted_neighbor_indices = neighbor_indices.sortedBy { idx -> euclideanDistances[idx] }
         val classes_of_nearest_neighbors = neighbor_classes.sliceArray(sorted_neighbor_indices)
 
-        return kMajorityVoting(classes_of_nearest_neighbors, 3)
+        return kMajorityVoting(classes_of_nearest_neighbors, 10)
     }
 
     private fun kMajorityVoting(sortedClassesOfNearestNeighbors: Array<Int>, k:Int): Pair<Int,Array<Double>> {
@@ -672,18 +625,6 @@ class ClassificationThread
         // Square-root of sum
         return diff.sum().pow(x = 0.5);
     }
-
-    private fun deepcopySensorDataBuffer(buffer: Array<Array<Double>>): Array<Array<Double>> {
-
-        var arrayOut: Array<Array<Double>> = arrayOf(
-                Array<Double>(size = activityThread.arraySize, init = {idx -> buffer[0][idx]}),
-                Array<Double>(size = activityThread.arraySize, init = {idx -> buffer[1][idx]}),
-                Array<Double>(size = activityThread.arraySize, init = {idx -> buffer[2][idx]}),
-                Array<Double>(size = activityThread.arraySize, init = {idx -> buffer[3][idx]})
-        )
-
-        return arrayOut
-    }
 }
 
 class ClassificationTimerTask
@@ -702,26 +643,25 @@ class ClassificationTimerTask
 
 class ReferenceDataCsvReader {
 
-    fun read(file:String) : Pair<Array<Array<Double>>, Array<Int>> {
+    fun read(stream: InputStream) : Pair<Array<Array<Double>>, Array<Int>> {
 
         val referenceData = mutableListOf<Array<Double>>();
         val referenceClasses = mutableListOf<Int>();
 
-        val file_ = File(file);
-        val reader = file_.bufferedReader()
+        val reader = stream.bufferedReader()
         var line: String? = reader.readLine();
         while (line != null) {
             val tokens = line.split(";")
             val tmp = arrayOf<Double>(
-                    tokens[1].toDouble(), // Gyro x
-                    tokens[2].toDouble(), // Gyro y
-                    tokens[3].toDouble(), // Gyro z
-                    tokens[4].toDouble(), // Accelerometer x
-                    tokens[5].toDouble(), // Accelerometer y
-                    tokens[6].toDouble(), // Accelerometer z
+                    tokens[0].toDouble(), // Gyro x
+                    tokens[1].toDouble(), // Gyro y
+                    tokens[2].toDouble(), // Gyro z
+                    tokens[3].toDouble(), // Accelerometer x
+                    tokens[4].toDouble(), // Accelerometer y
+                    tokens[5].toDouble(), // Accelerometer z
             )
             referenceData.add(element = tmp);
-            referenceClasses.add(element = tokens[7].toInt());
+            referenceClasses.add(element = tokens[6].toInt());
             line = reader.readLine()
         }
 

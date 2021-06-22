@@ -7,10 +7,6 @@
     <string name="accelerometer_label_y">Accelerometer y: %1$.2f</string>
     <string name="accelerometer_label_z">Accelerometer z: %1$.2f</string>
     <string name="error_no_sensor">No Sensor</string>
-    <string name="triceps_percentage">%1$.2f</string>
-    <string name="biceps_percentage">%1$.2f</string>
-    <string name="russian_twist_percentage">%1$.2f</string>
-    <string name="crunches_percentage">%1$.2f</string>
 
     <string name="activity_1_left_val">%1.2f</string>
     <string name="activity_1_right_val">%1.2f</string>

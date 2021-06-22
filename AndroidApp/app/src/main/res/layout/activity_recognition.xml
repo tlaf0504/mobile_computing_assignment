@@ -36,10 +36,10 @@
                 android:id="@+id/activity_knn_1_label"
                 android:layout_column="0"
                 android:layout_gravity="center_vertical"
-                android:gravity="right"
-                android:text="Activity 1"
+                android:gravity="left"
+                android:text="Biceps-Curls"
                 android:layout_marginHorizontal="5pt"
-                android:layout_weight="20"/>
+                android:layout_weight="10"/>
             <TextView
                 android:id="@+id/activity_knn_1_prob"
                 android:layout_column="1"
@@ -55,10 +55,10 @@
                 android:id="@+id/activity_knn_2_label"
                 android:layout_column="0"
                 android:layout_gravity="center_vertical"
-                android:gravity="right"
-                android:text="Activity 2"
+                android:gravity="left"
+                android:text="Triceps-Curls"
                 android:layout_marginHorizontal="5pt"
-                android:layout_weight="20"/>
+                android:layout_weight="10"/>
             <TextView
                 android:id="@+id/activity_knn_2_prob"
                 android:layout_column="1"
@@ -74,10 +74,10 @@
                 android:id="@+id/activity_knn_3_label"
                 android:layout_column="0"
                 android:layout_gravity="center_vertical"
-                android:gravity="right"
-                android:text="Activity 3"
+                android:gravity="left"
+                android:text="Russian-Twist"
                 android:layout_marginHorizontal="5pt"
-                android:layout_weight="20"/>
+                android:layout_weight="10"/>
             <TextView
                 android:id="@+id/activity_knn_3_prob"
                 android:layout_column="1"
@@ -93,10 +93,10 @@
                 android:id="@+id/activity_knn_4_label"
                 android:layout_column="0"
                 android:layout_gravity="center_vertical"
-                android:gravity="right"
-                android:text="Activity 4"
+                android:gravity="left"
+                android:text="Crunches"
                 android:layout_marginHorizontal="5pt"
-                android:layout_weight="20"/>
+                android:layout_weight="10"/>
             <TextView
                 android:id="@+id/activity_knn_4_prob"
                 android:layout_column="1"
@@ -113,9 +113,9 @@
                 android:id="@+id/classified_activity_knn"
                 android:layout_column="0"
                 android:layout_gravity="center_vertical"
-                android:gravity="right"
+                android:gravity="left"
                 android:text="@string/classified_activity_knn"
-                android:layout_weight="20"
+                android:layout_weight="10"
                 android:textStyle="bold"
                 android:layout_marginHorizontal="5pt"
                 android:maxLength="10"/>
