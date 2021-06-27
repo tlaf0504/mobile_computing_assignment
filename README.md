@@ -12,14 +12,6 @@ Also check out the [report](https://github.com/tlaf0504/mobile_computing_assignm
 the essential ideas and concepts for the developed app in a condensed way.
 
 <img src="https://github.com/tlaf0504/mobile_computing_assignment/blob/master/doc/report/figures/UI_main.jpg" alt="alt text" width="200">
-
-![The Main UI](https://github.com/tlaf0504/mobile_computing_assignment/blob/master/doc/report/figures/UI_main.jpg)
-![Data Capturing](https://github.com/tlaf0504/mobile_computing_assignment/blob/master/doc/report/figures/UI_data_capturing.jpg | width=100)
-![kNN Classification](https://github.com/tlaf0504/mobile_computing_assignment/blob/master/doc/report/figures/UI_kNN.jpg | width=100)
-![Transfer Learning](https://github.com/tlaf0504/mobile_computing_assignment/blob/master/doc/report/figures/UI_TFL.jpg | width=100)
-
-
-
-
-
-
+<img src="https://github.com/tlaf0504/mobile_computing_assignment/blob/master/doc/report/figures/UI_data_capturing.jpg" alt="alt text" width="200">
+<img src="https://github.com/tlaf0504/mobile_computing_assignment/blob/master/doc/report/figures/UI_kNN.jpg" alt="alt text" width="200">
+<img src="https://github.com/tlaf0504/mobile_computing_assignment/blob/master/doc/report/figures/UI_TFL.jpg" alt="alt text" width="200">
