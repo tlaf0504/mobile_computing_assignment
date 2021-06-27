@@ -13,19 +13,9 @@ the essential ideas and concepts for the developed app in a condensed way.
 
 <p align="center">
   <img src="https://github.com/tlaf0504/mobile_computing_assignment/blob/master/doc/report/figures/UI_main.jpg" alt="alt text" width="200">
+  <img src="https://github.com/tlaf0504/mobile_computing_assignment/blob/master/doc/report/figures/UI_data_capturing.jpg" alt="alt text" width="200">
+  <img src="https://github.com/tlaf0504/mobile_computing_assignment/blob/master/doc/report/figures/UI_kNN.jpg" alt="alt text" width="200">
+  <img src="https://github.com/tlaf0504/mobile_computing_assignment/blob/master/doc/report/figures/UI_TFL.jpg" alt="alt text" width="200">
 </p>
-
-<p align="center">
-  <img src="https://github.com/tlaf0504/mobile_computing_assignment/blob/master/doc/report/figures/UI_data_capturing.jpg" alt="alt text" width="200" align="center">
-</p>
-
-<p align="center">
-  <img src="https://github.com/tlaf0504/mobile_computing_assignment/blob/master/doc/report/figures/UI_kNN.jpg" alt="alt text" width="200" align="center">
-</p>
-
-<p align="center">
-  <img src="https://github.com/tlaf0504/mobile_computing_assignment/blob/master/doc/report/figures/UI_TFL.jpg" alt="alt text" width="200" align="center">
-</p>
-
 
 
