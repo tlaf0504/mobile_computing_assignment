@@ -1,17 +1,22 @@
 # Mobile-Computing Assignment
 
-Repository for my [Mobile-Computing Laboratory](https://github.com/osaukh/mobile_computing_lab/) assigment in Summer-Term 2021.
+Repository for my [Mobile-Computing Laboratory](https://github.com/osaukh/mobile_computing_lab/) assignment in Summer-Term 2021.
 
-The final target is to develop an activity-recognition app, being capable of classifying several strength training exercises. (e.g. push-ups etc.)
+An Android app was developed to include classify several activities using the phones Gyroscope and Accelerometer.
 
-### General Information
-The [App](https://github.com/tlaf0504/mobile_computing_assignment/tree/master/AndroidApp) requires at least **Android 8.1** and was developed on an **LG Q6** smartphone.
+This repository contains the [Android App](https://github.com/tlaf0504/mobile_computing_assignment/tree/master/AndroidApp) itself
+ass well as the [data-sets](https://github.com/tlaf0504/mobile_computing_assignment/tree/master/Notebooks_Scripts_etc/ActivityRecognition/data)
+and all additional [pre- and postprocessing scripts](https://github.com/tlaf0504/mobile_computing_assignment/tree/master/Notebooks_Scripts_etc/ActivityRecognition/notebooks).
 
-### Subdirectories
-* [AndroidApp](https://github.com/tlaf0504/mobile_computing_assignment/tree/master/AndroidApp) contains the Source-Code for the Android-Application
-* [Notebook_Scripts_etc](https://github.com/tlaf0504/mobile_computing_assignment/tree/master/Notebooks_Scripts_etc) contains (as the name already suggests) IPython-Notebooks, Training-Data and several other thigs related to this project.
+Also check out the [report](https://github.com/tlaf0504/mobile_computing_assignment/blob/master/doc/report/conference_101719.pdf) as it contains
+the essential ideas and concepts for the developed app in a condensed way.
 
-Further sub-directories might be added in future.
+![The Main UI](UI_main.jpg)
+![Data Capturing](UI_data_capturing.jpg)
+![kNN Classification](UI_kNN.jpg)
+![Transfer Learning](UI_TFL.jpg)
+
+
 
 
 
