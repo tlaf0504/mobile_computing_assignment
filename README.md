@@ -11,6 +11,8 @@ and all additional [pre- and postprocessing scripts](https://github.com/tlaf0504
 Also check out the [report](https://github.com/tlaf0504/mobile_computing_assignment/blob/master/doc/report/conference_101719.pdf) as it contains
 the essential ideas and concepts for the developed app in a condensed way.
 
+<img src="https://github.com/tlaf0504/mobile_computing_assignment/blob/master/doc/report/figures/UI_main.jpg" alt="alt text" width="200">
+
 ![The Main UI](https://github.com/tlaf0504/mobile_computing_assignment/blob/master/doc/report/figures/UI_main.jpg)
 ![Data Capturing](https://github.com/tlaf0504/mobile_computing_assignment/blob/master/doc/report/figures/UI_data_capturing.jpg | width=100)
 ![kNN Classification](https://github.com/tlaf0504/mobile_computing_assignment/blob/master/doc/report/figures/UI_kNN.jpg | width=100)
