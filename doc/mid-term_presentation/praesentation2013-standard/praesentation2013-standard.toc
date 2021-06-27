@@ -1,3 +1,0 @@
-\beamer@sectionintoc {1}{Overview}{3}{0}{1}
-\beamer@sectionintoc {2}{Data-Analysis and Signal-Processing}{6}{0}{2}
-\beamer@sectionintoc {3}{Demo}{9}{0}{3}
