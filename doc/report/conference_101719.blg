@@ -1,9 +1,17 @@
 [0] Config.pm:304> INFO - This is Biber 2.14
 [0] Config.pm:307> INFO - Logfile is 'conference_101719.blg'
-[47] biber:322> INFO - === Di Jun 22, 2021, 12:05:53
-[57] Biber.pm:415> INFO - Reading 'conference_101719.bcf'
-[106] Biber.pm:943> INFO - Found 0 citekeys in bib section 0
-[110] Utils.pm:304> WARN - The file 'conference_101719.bcf' does not contain any citations!
-[116] bbl.pm:652> INFO - Writing 'conference_101719.bbl' with encoding 'UTF-8'
-[116] bbl.pm:755> INFO - Output to conference_101719.bbl
-[116] Biber.pm:128> INFO - WARNINGS: 1
+[50] biber:322> INFO - === So Jun 27, 2021, 13:44:09
+[60] Biber.pm:415> INFO - Reading 'conference_101719.bcf'
+[110] Biber.pm:943> INFO - Found 11 citekeys in bib section 0
+[121] Biber.pm:4256> INFO - Processing section 0
+[121] Utils.pm:75> INFO - Globbing data source 'bib.bib'
+[121] Utils.pm:91> INFO - Globbed data source 'bib.bib' to bib.bib
+[128] Biber.pm:4455> INFO - Looking for bibtex format file 'bib.bib' for section 0
+[129] bibtex.pm:1653> INFO - LaTeX decoding ...
+[136] bibtex.pm:1471> INFO - Found BibTeX data source 'bib.bib'
+[171] UCollate.pm:68> INFO - Overriding locale 'en-US' defaults 'variable = shifted' with 'variable = non-ignorable'
+[172] UCollate.pm:68> INFO - Overriding locale 'en-US' defaults 'normalization = NFD' with 'normalization = prenormalized'
+[172] Biber.pm:4084> INFO - Sorting list 'none/global//global/global' of type 'entry' with template 'none' and locale 'en-US'
+[172] Biber.pm:4090> INFO - No sort tailoring available for locale 'en-US'
+[178] bbl.pm:652> INFO - Writing 'conference_101719.bbl' with encoding 'UTF-8'
+[180] bbl.pm:755> INFO - Output to conference_101719.bbl

@@ -16,5 +16,213 @@
   {}
 \endgroup
 
+
+\refsection{0}
+  \datalist[entry]{none/global//global/global}
+    \entry{lafer_mobile-computing_2021}{online}{}
+      \name{author}{1}{}{%
+        {{hash=2566526a98863befb6d2ff70187cdd8b}{%
+           family={Lafer},
+           familyi={L\bibinitperiod},
+           given={Tobias},
+           giveni={T\bibinitperiod}}}%
+      }
+      \strng{namehash}{2566526a98863befb6d2ff70187cdd8b}
+      \strng{fullhash}{2566526a98863befb6d2ff70187cdd8b}
+      \strng{bibnamehash}{2566526a98863befb6d2ff70187cdd8b}
+      \strng{authorbibnamehash}{2566526a98863befb6d2ff70187cdd8b}
+      \strng{authornamehash}{2566526a98863befb6d2ff70187cdd8b}
+      \strng{authorfullhash}{2566526a98863befb6d2ff70187cdd8b}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{day}{27}
+      \field{month}{6}
+      \field{title}{Mobile-Computing Assignment}
+      \field{year}{2021}
+      \field{dateera}{ce}
+      \verb{urlraw}
+      \verb https://github.com/tlaf0504/mobile_computing_assignment
+      \endverb
+      \verb{url}
+      \verb https://github.com/tlaf0504/mobile_computing_assignment
+      \endverb
+    \endentry
+    \entry{pavel_senchanka_example_2019}{book}{}
+      \name{author}{1}{}{%
+        {{hash=4184f500f3a69d56553cad037a25ae39}{%
+           family={{Pavel Senchanka}},
+           familyi={P\bibinitperiod}}}%
+      }
+      \strng{namehash}{4184f500f3a69d56553cad037a25ae39}
+      \strng{fullhash}{4184f500f3a69d56553cad037a25ae39}
+      \strng{bibnamehash}{4184f500f3a69d56553cad037a25ae39}
+      \strng{authorbibnamehash}{4184f500f3a69d56553cad037a25ae39}
+      \strng{authornamehash}{4184f500f3a69d56553cad037a25ae39}
+      \strng{authorfullhash}{4184f500f3a69d56553cad037a25ae39}
+      \field{sortinit}{2}
+      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{day}{12}
+      \field{month}{12}
+      \field{title}{Example on-device model personalization with {TensorFlow} Lite}
+      \field{urlday}{27}
+      \field{urlmonth}{6}
+      \field{urlyear}{2021}
+      \field{year}{2019}
+      \field{dateera}{ce}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://blog.tensorflow.org/2019/12/example-on-device-model-personalization.html
+      \endverb
+      \verb{url}
+      \verb https://blog.tensorflow.org/2019/12/example-on-device-model-personalization.html
+      \endverb
+    \endentry
+    \entry{noauthor_k-nearest_2021}{online}{}
+      \field{sortinit}{3}
+      \field{sortinithash}{ad6fe7482ffbd7b9f99c9e8b5dccd3d7}
+      \field{labeltitlesource}{title}
+      \field{day}{21}
+      \field{month}{6}
+      \field{title}{k-nearest neighbors algorithm}
+      \field{year}{2021}
+      \field{dateera}{ce}
+      \verb{urlraw}
+      \verb https://en.wikipedia.org/wiki/K-nearest_neighbors_algorithm
+      \endverb
+      \verb{url}
+      \verb https://en.wikipedia.org/wiki/K-nearest_neighbors_algorithm
+      \endverb
+    \endentry
+    \entry{noauthor_norm_2021}{online}{}
+      \field{sortinit}{4}
+      \field{sortinithash}{9381316451d1b9788675a07e972a12a7}
+      \field{labeltitlesource}{title}
+      \field{day}{22}
+      \field{month}{6}
+      \field{title}{Norm (mathematics)}
+      \field{year}{2021}
+      \field{dateera}{ce}
+      \verb{urlraw}
+      \verb https://en.wikipedia.org/wiki/Norm_(mathematics)
+      \endverb
+      \verb{url}
+      \verb https://en.wikipedia.org/wiki/Norm_(mathematics)
+      \endverb
+    \endentry
+    \entry{noauthor_euclidean_2021}{online}{}
+      \field{sortinit}{5}
+      \field{sortinithash}{20e9b4b0b173788c5dace24730f47d8c}
+      \field{labeltitlesource}{title}
+      \field{day}{22}
+      \field{month}{6}
+      \field{title}{Euclidean distance}
+      \field{year}{2021}
+      \field{dateera}{ce}
+      \verb{urlraw}
+      \verb https://en.wikipedia.org/wiki/Euclidean_distance
+      \endverb
+      \verb{url}
+      \verb https://en.wikipedia.org/wiki/Euclidean_distance
+      \endverb
+    \endentry
+    \entry{noauthor_notitle_2021-3}{online}{}
+      \field{sortinit}{6}
+      \field{sortinithash}{b33bc299efb3c36abec520a4c896a66d}
+      \field{abstract}{Curls}
+      \field{day}{22}
+      \field{month}{6}
+      \field{year}{2021}
+      \field{dateera}{ce}
+      \verb{urlraw}
+      \verb https://www.shutterstock.com/de/image-vector/man-doing-standing-dumbbell-bicep-curls-1850250391
+      \endverb
+      \verb{url}
+      \verb https://www.shutterstock.com/de/image-vector/man-doing-standing-dumbbell-bicep-curls-1850250391
+      \endverb
+    \endentry
+    \entry{noauthor_notitle_2021}{online}{}
+      \field{sortinit}{8}
+      \field{sortinithash}{a231b008ebf0ecbe0b4d96dcc159445f}
+      \field{abstract}{Trizeps}
+      \field{day}{22}
+      \field{month}{6}
+      \field{year}{2021}
+      \field{dateera}{ce}
+      \verb{urlraw}
+      \verb https://www.elle.de/armuebungen-model-workout
+      \endverb
+      \verb{url}
+      \verb https://www.elle.de/armuebungen-model-workout
+      \endverb
+    \endentry
+    \entry{noauthor_notitle_2021-1}{online}{}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{abstract}{Crunch}
+      \field{day}{22}
+      \field{month}{6}
+      \field{year}{2021}
+      \field{dateera}{ce}
+      \verb{urlraw}
+      \verb https://www.shutterstock.com/de/image-vector/man-doing-crunches-abdominals-exercise-flat-1842272014
+      \endverb
+      \verb{url}
+      \verb https://www.shutterstock.com/de/image-vector/man-doing-crunches-abdominals-exercise-flat-1842272014
+      \endverb
+    \endentry
+    \entry{noauthor_notitle_2021-2}{online}{}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{abstract}{Russian-Twists}
+      \field{day}{22}
+      \field{month}{6}
+      \field{year}{2021}
+      \field{dateera}{ce}
+      \verb{urlraw}
+      \verb https://www.elle.de/bauchmuskel-training-abnehmen
+      \endverb
+      \verb{url}
+      \verb https://www.elle.de/bauchmuskel-training-abnehmen
+      \endverb
+    \endentry
+    \entry{noauthor_sensoreventcallback_2021}{online}{}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{labeltitlesource}{title}
+      \field{day}{22}
+      \field{month}{6}
+      \field{title}{{SensorEventCallback}}
+      \field{titleaddon}{{SensorEventCallback}}
+      \field{year}{2021}
+      \field{dateera}{ce}
+      \verb{urlraw}
+      \verb https://developer.android.com/reference/android/hardware/SensorEventCallback#onSensorChanged(android.hardware.SensorEvent)
+      \endverb
+      \verb{url}
+      \verb https://developer.android.com/reference/android/hardware/SensorEventCallback#onSensorChanged(android.hardware.SensorEvent)
+      \endverb
+    \endentry
+    \entry{noauthor_seabornpairplot_2021}{online}{}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{labeltitlesource}{title}
+      \field{day}{27}
+      \field{month}{6}
+      \field{title}{seaborn.pairplot}
+      \field{year}{2021}
+      \field{dateera}{ce}
+      \verb{urlraw}
+      \verb https://seaborn.pydata.org/generated/seaborn.pairplot.html
+      \endverb
+      \verb{url}
+      \verb https://seaborn.pydata.org/generated/seaborn.pairplot.html
+      \endverb
+    \endentry
+  \enddatalist
+\endrefsection
 \endinput
 

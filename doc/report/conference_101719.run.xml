@@ -82,7 +82,7 @@
       <file>conference_101719.bcf</file>
     </requires>
     <requires type="editable">
-      <file>IEEEfull</file>
+      <file>bib.bib</file>
     </requires>
   </external>
 </requests>
