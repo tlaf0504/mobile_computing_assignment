@@ -474,8 +474,9 @@ As the basic task of this model is a classification-task,
 \begin{figure}[htbp]
     \centering
     \begin{tikzpicture}
-        \draw[rounded corners] (0,0) rectangle (6,-6.5); \draw[Latex-] (3,-0.5)
-        -- ++(0,1) node[above] {$\left(N_{Samples} \times 6\right)$};
+        \draw[rounded corners] (0,0) rectangle (6,-6.5); 
+        \draw[Latex-] (3,-0.5)
+        -- ++(0,1) node[above] {Output of parent's \textit{Flatten}-layer};
 
 
         \draw (0.5,-0.5) coordinate (tmp) rectangle ++(5,-1); \node () at

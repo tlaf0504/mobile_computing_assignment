@@ -1,12 +1,12 @@
 # Fdb version 3
-["biber conference_101719"] 1624794248 "conference_101719.bcf" "conference_101719.bbl" "conference_101719" 1624794254
+["biber conference_101719"] 1624794248 "conference_101719.bcf" "conference_101719.bbl" "conference_101719" 1624873808
   "bib.bib" 1624794174 4439 10397d035308949076b1802632d247a8 ""
-  "conference_101719.bcf" 1624794253 101803 e2b7e26ada8d1bfb240cd820f0f3282e "pdflatex"
+  "conference_101719.bcf" 1624873808 101803 e2b7e26ada8d1bfb240cd820f0f3282e "pdflatex"
   (generated)
   "conference_101719.bbl"
   "conference_101719.blg"
-["pdflatex"] 1624794251 "/run/media/tobiaslafer/shared/Nextcloud_sync/NAS_share_tobias/Backup_Tobias/Documents/Uni/SS_20_21/Mobile_Computing/mobile_computing_assignment/doc/report/conference_101719.tex" "conference_101719.pdf" "conference_101719" 1624794254
-  "/run/media/tobiaslafer/shared/Nextcloud_sync/NAS_share_tobias/Backup_Tobias/Documents/Uni/SS_20_21/Mobile_Computing/mobile_computing_assignment/doc/report/conference_101719.tex" 1624794246 32150 47a7d9a8422e9003adba65f5d38de14e ""
+["pdflatex"] 1624873805 "/run/media/tobiaslafer/shared/Nextcloud_sync/NAS_share_tobias/Backup_Tobias/Documents/Uni/SS_20_21/Mobile_Computing/mobile_computing_assignment/doc/report/conference_101719.tex" "conference_101719.pdf" "conference_101719" 1624873808
+  "/run/media/tobiaslafer/shared/Nextcloud_sync/NAS_share_tobias/Backup_Tobias/Documents/Uni/SS_20_21/Mobile_Computing/mobile_computing_assignment/doc/report/conference_101719.tex" 1624873805 32165 aa635e73f2c78c84a4aae59425aa779c ""
   "/usr/share/texlive/texmf-dist/fonts/enc/dvips/base/8r.enc" 1612289690 4850 80dc9bab7f31fb78a000ccfed0e27cab ""
   "/usr/share/texlive/texmf-dist/fonts/map/fontname/texfonts.map" 1577235249 3524 cb3e574dea2d1052e39280babc910dc8 ""
   "/usr/share/texlive/texmf-dist/fonts/map/pdftex/updmap/pdftex.map" 1604350495 5022041 fedbf65a04995bc2a815b3fd3ce911d3 ""
@@ -210,10 +210,10 @@
   "/usr/share/texlive/texmf-dist/web2c/texmf.cnf" 1612289693 39615 4ca7b2be4e89b50848d4f0b4d97130bb ""
   "/usr/share/texlive/texmf-var/web2c/pdftex/pdflatex.fmt" 1616144419 2419823 26e5d3ba021955c641f3a60b4651c407 ""
   "IEEEtran.cls" 1440632924 288304 b67b6fc6c2abb39f9b461923f5199343 ""
-  "conference_101719.aux" 1624794253 9923 1dedb2cc6dc053396dc1440fb7f1d62c "pdflatex"
+  "conference_101719.aux" 1624873808 9923 1dedb2cc6dc053396dc1440fb7f1d62c "pdflatex"
   "conference_101719.bbl" 1624794249 7877 442dd66b4c5687464ff8640e303f3e05 "biber conference_101719"
-  "conference_101719.run.xml" 1624794253 2486 a572eae0908f1044ca31cbd37ba4f104 "pdflatex"
-  "conference_101719.tex" 1624794246 32150 47a7d9a8422e9003adba65f5d38de14e ""
+  "conference_101719.run.xml" 1624873808 2486 a572eae0908f1044ca31cbd37ba4f104 "pdflatex"
+  "conference_101719.tex" 1624873805 32165 aa635e73f2c78c84a4aae59425aa779c ""
   "figures/UI_TFL.jpg" 1624784965 245445 e8dfd1f2011c245c5823afc3d9e31c54 ""
   "figures/UI_data_capturing.jpg" 1624785112 113586 803e7af0335f6b6a658d86731a1b409d ""
   "figures/UI_kNN.jpg" 1624784905 112721 6af409c965dbd80c9afb330952fc0675 ""
@@ -238,8 +238,8 @@
   "figures/triceps.png" 1624376291 76896 a872b992d3158d4425a8249e25fd750e ""
   "listings_python_style.tex" 1624777267 4658 3e7ae00477106abce6651e965b263fde ""
   (generated)
-  "conference_101719.aux"
-  "conference_101719.pdf"
   "conference_101719.bcf"
-  "conference_101719.log"
   "conference_101719.run.xml"
+  "conference_101719.aux"
+  "conference_101719.log"
+  "conference_101719.pdf"

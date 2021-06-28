@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.21 (TeX Live 2020) (preloaded format=pdflatex 2021.3.19)  27 JUN 2021 13:44
+This is pdfTeX, Version 3.14159265-2.6-1.40.21 (TeX Live 2020) (preloaded format=pdflatex 2021.3.19)  28 JUN 2021 11:50
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -1107,7 +1107,7 @@ File: figures/hist_child_validation-eps-converted-to.pdf Graphic file (type pdf)
 Package pdftex.def Info: figures/hist_child_validation-eps-converted-to.pdf  used on input line 402.
 (pdftex.def)             Requested size: 154.80157pt x 103.19974pt.
 
-Overfull \hbox (11.58788pt too wide) in paragraph at lines 537--542
+Overfull \hbox (11.58788pt too wide) in paragraph at lines 538--543
  [][] 
  []
 
@@ -1121,15 +1121,15 @@ Package epstopdf Info: Source file: <figures/parent_confusion_matrix.eps>
 (epstopdf)                    date: 2021-06-26 15:57:47
 (epstopdf)                    size: 16991 bytes
 (epstopdf)             Command: <repstopdf --outfile=figures/parent_confusion_matrix-eps-converted-to.pdf figures/parent_confusion_matrix.eps>
-(epstopdf)             \includegraphics on input line 573.
+(epstopdf)             \includegraphics on input line 574.
 Package epstopdf Info: Output file is already uptodate.
 <figures/parent_confusion_matrix-eps-converted-to.pdf, id=253, 650.43pt x 325.215pt>
 File: figures/parent_confusion_matrix-eps-converted-to.pdf Graphic file (type pdf)
 <use figures/parent_confusion_matrix-eps-converted-to.pdf>
-Package pdftex.def Info: figures/parent_confusion_matrix-eps-converted-to.pdf  used on input line 573.
+Package pdftex.def Info: figures/parent_confusion_matrix-eps-converted-to.pdf  used on input line 574.
 (pdftex.def)             Requested size: 258.0pt x 129.00189pt.
 
-Overfull \hbox (6.0pt too wide) in paragraph at lines 573--574
+Overfull \hbox (6.0pt too wide) in paragraph at lines 574--575
  [][] 
  []
 
@@ -1140,15 +1140,15 @@ Package epstopdf Info: Source file: <figures/child_confusion_matrix.eps>
 (epstopdf)                    date: 2021-06-26 15:57:48
 (epstopdf)                    size: 16375 bytes
 (epstopdf)             Command: <repstopdf --outfile=figures/child_confusion_matrix-eps-converted-to.pdf figures/child_confusion_matrix.eps>
-(epstopdf)             \includegraphics on input line 581.
+(epstopdf)             \includegraphics on input line 582.
 Package epstopdf Info: Output file is already uptodate.
 <figures/child_confusion_matrix-eps-converted-to.pdf, id=254, 650.43pt x 325.215pt>
 File: figures/child_confusion_matrix-eps-converted-to.pdf Graphic file (type pdf)
 <use figures/child_confusion_matrix-eps-converted-to.pdf>
-Package pdftex.def Info: figures/child_confusion_matrix-eps-converted-to.pdf  used on input line 581.
+Package pdftex.def Info: figures/child_confusion_matrix-eps-converted-to.pdf  used on input line 582.
 (pdftex.def)             Requested size: 258.0pt x 129.00189pt.
 
-Overfull \hbox (6.0pt too wide) in paragraph at lines 581--582
+Overfull \hbox (6.0pt too wide) in paragraph at lines 582--583
  [][] 
  []
 
@@ -1156,62 +1156,62 @@ Overfull \hbox (6.0pt too wide) in paragraph at lines 581--582
 Underfull \vbox (badness 2343) has occurred while \output is active []
 
  [4 <./figures/original_model_position.png> <./figures/transfer_learning_position.png> <./figures/hist_parent_training-eps-converted-to.pdf> <./figures/hist_parent_validation-eps-converted-to.pdf> <./figures/hist_child_training-eps-converted-to.pdf> <./figures/hist_child_validation-eps-converted-to.pdf>] [5]
-Underfull \hbox (badness 2173) in paragraph at lines 604--610
+Underfull \hbox (badness 2173) in paragraph at lines 605--611
 \OT1/ptm/m/n/10 This win-dow con-tains all pos-si-ble ac-tions for the
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 604--610
+Underfull \hbox (badness 10000) in paragraph at lines 605--611
 
  []
 
 <figures/UI_main.jpg, id=409, 1084.05pt x 2409.0pt>
 File: figures/UI_main.jpg Graphic file (type jpg)
 <use figures/UI_main.jpg>
-Package pdftex.def Info: figures/UI_main.jpg  used on input line 631.
+Package pdftex.def Info: figures/UI_main.jpg  used on input line 632.
 (pdftex.def)             Requested size: 103.19843pt x 229.29848pt.
 <figures/UI_data_capturing.jpg, id=410, 1084.05pt x 2409.0pt>
 File: figures/UI_data_capturing.jpg Graphic file (type jpg)
 <use figures/UI_data_capturing.jpg>
-Package pdftex.def Info: figures/UI_data_capturing.jpg  used on input line 638.
+Package pdftex.def Info: figures/UI_data_capturing.jpg  used on input line 639.
 (pdftex.def)             Requested size: 103.19843pt x 229.29848pt.
 <figures/UI_kNN.jpg, id=411, 1084.05pt x 2409.0pt>
 File: figures/UI_kNN.jpg Graphic file (type jpg)
 <use figures/UI_kNN.jpg>
-Package pdftex.def Info: figures/UI_kNN.jpg  used on input line 645.
+Package pdftex.def Info: figures/UI_kNN.jpg  used on input line 646.
 (pdftex.def)             Requested size: 103.19843pt x 229.29848pt.
 <figures/UI_TFL.jpg, id=412, 1084.05pt x 2409.0pt>
 File: figures/UI_TFL.jpg Graphic file (type jpg)
 <use figures/UI_TFL.jpg>
-Package pdftex.def Info: figures/UI_TFL.jpg  used on input line 652.
+Package pdftex.def Info: figures/UI_TFL.jpg  used on input line 653.
 (pdftex.def)             Requested size: 103.19843pt x 229.29848pt.
 
-Underfull \hbox (badness 1527) in paragraph at lines 659--685
+Underfull \hbox (badness 1527) in paragraph at lines 660--686
 \OT1/ptm/m/n/10 trained and ap-plied to these activities/activity-transitions.
  []
 
 
-Underfull \hbox (badness 1681) in paragraph at lines 659--685
+Underfull \hbox (badness 1681) in paragraph at lines 660--686
 \OT1/ptm/m/n/10 Un-for-tu-nately, de-sign-ing and im-ple-ment-ing a model for
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 659--685
+Underfull \hbox (badness 10000) in paragraph at lines 660--686
 
  []
 
 [6 <./figures/parent_confusion_matrix-eps-converted-to.pdf> <./figures/child_confusion_matrix-eps-converted-to.pdf> <./figures/UI_main.jpg>]
-Underfull \hbox (badness 2435) in paragraph at lines 686--696
+Underfull \hbox (badness 2435) in paragraph at lines 687--697
 []\OT1/ptm/m/n/10 One is-sue ob-served while de-sign-ing and test-ing the
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 686--696
+Underfull \hbox (badness 10000) in paragraph at lines 687--697
 
  []
 
 [7 <./figures/UI_data_capturing.jpg> <./figures/UI_kNN.jpg> <./figures/UI_TFL.jpg>]
-Underfull \hbox (badness 1755) in paragraph at lines 712--712
+Underfull \hbox (badness 1755) in paragraph at lines 713--713
 \OT1/ptm/m/n/10 able: $https : / / en . wikipedia . org / wiki / Norm[]
  []
 
@@ -1231,7 +1231,7 @@ Here is how much of TeX's memory you used:
  1137 hyphenation exceptions out of 8191
  60i,11n,83p,1020b,1788s stack positions out of 5000i,500n,10000p,200000b,80000s
 {/usr/share/texlive/texmf-dist/fonts/enc/dvips/base/8r.enc}</usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi6.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi7.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi8.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr7.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr8.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy8.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmti10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/latxfont/lcircle1.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/courier/ucrr8a.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/times/utmb8a.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/times/utmbi8a.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/times/utmr8a.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/times/utmri8a.pfb>
-Output written on conference_101719.pdf (8 pages, 4172101 bytes).
+Output written on conference_101719.pdf (8 pages, 4172140 bytes).
 PDF statistics:
  561 PDF objects out of 1000 (max. 8388607)
  120 compressed objects within 2 object streams
